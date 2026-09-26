@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
+import { useScrollLock } from '../../hooks/useScrollLock.js';
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -13,13 +14,13 @@ export default function Dialog({ title, onClose, children, footer, size = 'md', 
   const busyRef = useRef(busy);
   onCloseRef.current = onClose;
   busyRef.current = busy;
+  useScrollLock(true);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
     const node = ref.current;
     const first = node.querySelector('[autofocus]') || node.querySelector(FOCUSABLE);
     first?.focus();
-    document.body.classList.add('no-scroll');
 
     const onKey = (e) => {
       if (e.key === 'Escape' && !busyRef.current) onCloseRef.current();
@@ -38,7 +39,6 @@ export default function Dialog({ title, onClose, children, footer, size = 'md', 
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.classList.remove('no-scroll');
       previouslyFocused?.focus?.();
     };
   }, []);

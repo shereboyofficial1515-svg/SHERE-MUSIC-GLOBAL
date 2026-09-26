@@ -6,6 +6,7 @@ import Artwork from '../ui/Artwork.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useDismiss } from '../../hooks/useDismiss.js';
+import { useScrollLock } from '../../hooks/useScrollLock.js';
 import { cx } from '../../utils/format.js';
 
 export const NAV_LINKS = [
@@ -135,8 +136,9 @@ export default function Header() {
     setSearchOpen(false);
   }, [location.pathname]);
 
+  useScrollLock(menuOpen);
+
   useEffect(() => {
-    document.body.classList.toggle('no-scroll', menuOpen);
     if (!menuOpen) return undefined;
     const onKey = (e) => e.key === 'Escape' && setMenuOpen(false);
     document.addEventListener('keydown', onKey);

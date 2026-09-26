@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import Icon from '../components/ui/Icon.jsx';
 import Logo from '../components/ui/Logo.jsx';
@@ -29,10 +29,12 @@ export default function AdminLayout() {
   const { current } = usePlayer();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const mainRef = useRef(null);
 
+  // The content area (not the window) is the scroll container, so reset it on navigation.
   useEffect(() => {
     setOpen(false);
-    window.scrollTo(0, 0);
+    mainRef.current?.scrollTo(0, 0);
   }, [pathname]);
 
   return (
@@ -46,7 +48,7 @@ export default function AdminLayout() {
             <MenuToggle open={open} onClick={() => setOpen((o) => !o)} controls="admin-nav" />
           </span>
           <Logo to="/admin" />
-          <span className="badge badge--gold">Admin</span>
+          <span className="badge badge--gold hide-xs">Admin</span>
         </div>
         <div className="row-gap">
           <Link to="/" className="btn btn--ghost btn--sm">
@@ -71,10 +73,13 @@ export default function AdminLayout() {
         </ul>
       </nav>
 
-      <main id="admin-main" className="admin__main" tabIndex={-1}>
-        <Suspense fallback={<PageLoader />}>
-          <Outlet />
-        </Suspense>
+      {/* Dedicated vertical scroll container for every admin page (see admin.css). */}
+      <main id="admin-main" ref={mainRef} className="admin__main" tabIndex={-1}>
+        <div className="admin__content">
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
+        </div>
       </main>
       <Player />
     </div>

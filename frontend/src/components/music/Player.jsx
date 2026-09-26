@@ -6,6 +6,7 @@ import { Spinner } from '../ui/Feedback.jsx';
 import { DownloadButton, FavoriteButton } from './SongActions.jsx';
 import { usePlayer, usePlayerProgress } from '../../context/PlayerContext.jsx';
 import { useLibrary } from '../../context/LibraryContext.jsx';
+import { useScrollLock } from '../../hooks/useScrollLock.js';
 import { cx, formatDuration } from '../../utils/format.js';
 
 /** Seek slider. Uses a native range input for keyboard and screen-reader support. */
@@ -127,15 +128,12 @@ function QueueList() {
 function ExpandedPlayer() {
   const { current, error, setExpanded } = usePlayer();
   const { openAddToPlaylist } = useLibrary();
+  useScrollLock(true);
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && setExpanded(false);
     document.addEventListener('keydown', onKey);
-    document.body.classList.add('no-scroll');
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.classList.remove('no-scroll');
-    };
+    return () => document.removeEventListener('keydown', onKey);
   }, [setExpanded]);
 
   return (

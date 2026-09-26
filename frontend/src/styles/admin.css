@@ -1,13 +1,27 @@
-/* ─── Admin shell ──────────────────────────────────────────────────────── */
+/* ─── Admin shell ──────────────────────────────────────────────────────────
+ * Viewport-height application shell:
+ *   .admin (100dvh, column)  ─ topbar (fixed height)
+ *                             └ .admin__main  → the ONLY vertical scroll container
+ *   .admin__sidebar (fixed)   → scrolls independently
+ * Page content never depends on <body> scrolling, so a body scroll lock left
+ * behind by an overlay can't trap admins on tall pages such as Upload Music.
+ */
 .admin {
   --sidebar-w: 240px;
   --topbar-h: 60px;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden; /* the shell itself never scrolls; .admin__main does */
+}
+.admin.has-player {
+  padding-bottom: var(--player-h); /* keeps the scroll area above the fixed player */
 }
 .admin__topbar {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -35,6 +49,7 @@
   width: var(--sidebar-w);
   padding: 16px 12px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--bg-elevated);
   border-right: 1px solid var(--border);
 }
@@ -66,14 +81,48 @@
   color: var(--sky);
 }
 .admin__main {
+  flex: 1;
+  min-height: 0; /* lets the flex child shrink so overflow-y can take effect */
+  min-width: 0;
   margin-left: var(--sidebar-w);
-  padding: 28px var(--gutter) 56px;
-  max-width: calc(1280px + var(--sidebar-w));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.admin__content {
   display: grid;
   gap: 20px;
   align-content: start;
   min-width: 0;
+  max-width: 1280px;
+  padding: 28px var(--gutter) 56px;
+}
+/* Visible, on-brand scrollbars for the content area and sidebar */
+.admin__main::-webkit-scrollbar,
+.admin__sidebar::-webkit-scrollbar {
+  width: 10px;
+}
+.admin__main::-webkit-scrollbar-track,
+.admin__sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin__main::-webkit-scrollbar-thumb,
+.admin__sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 2px solid var(--bg);
+  border-radius: 10px;
+}
+.admin__main::-webkit-scrollbar-thumb:hover,
+.admin__sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-subtle);
+}
+.admin__sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 .admin__backdrop {
   display: none;
