@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="glow" cx="0.8" cy="0.2" r="0.8">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#0b0f17" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0b0f17"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(110 215)">
+    <circle cx="100" cy="100" r="92" fill="none" stroke="#38bdf8" stroke-width="14"/>
+    <rect x="52" y="75" width="16" height="50" rx="8" fill="#38bdf8"/>
+    <rect x="82" y="45" width="16" height="110" rx="8" fill="#f5b942"/>
+    <rect x="112" y="62" width="16" height="76" rx="8" fill="#38bdf8"/>
+    <rect x="142" y="82" width="16" height="36" rx="8" fill="#38bdf8"/>
+  </g>
+  <text x="380" y="300" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="800" fill="#ffffff" letter-spacing="6">SHERE <tspan fill="#f5b942">MUSIC</tspan></text>
+  <text x="384" y="370" font-family="Arial, Helvetica, sans-serif" font-size="36" fill="#9aa4b8">Discover music. Stream music. Download music.</text>
+</svg>

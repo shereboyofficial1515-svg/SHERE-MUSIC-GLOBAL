@@ -1,0 +1,76 @@
+/* SHERE MUSIC design tokens — dark, sophisticated, sky-blue + gold accents. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #0b0f17;
+  --bg-elevated: #0f1522;
+  --surface: #131a28;
+  --surface-2: #1a2334;
+  --surface-3: #222d42;
+  --border: #243047;
+  --border-strong: #33415c;
+
+  /* Text (all pass WCAG AA on --bg / --surface) */
+  --text: #eef2f8;
+  --text-muted: #9ba7bd;
+  --text-subtle: #7d8aa3;
+
+  /* Brand */
+  --sky: #38bdf8;
+  --sky-strong: #0ea5e9;
+  --sky-soft: rgba(56, 189, 248, 0.14);
+  --gold: #f5b942;
+  --gold-soft: rgba(245, 185, 66, 0.14);
+  --teal: #2dd4bf;
+  --violet: #a78bfa;
+  --rose: #fb7185;
+
+  /* Status */
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
+
+  /* Type */
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: clamp(1.9rem, 4vw + 0.5rem, 3.1rem);
+
+  /* Shape */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+
+  /* Layout */
+  --header-h: 64px;
+  --player-h: 76px;
+  --gutter: 16px;
+  --container: 1280px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --focus: 0 0 0 3px rgba(56, 189, 248, 0.55);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 24px;
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --player-h: 66px;
+    --header-h: 58px;
+  }
+}
