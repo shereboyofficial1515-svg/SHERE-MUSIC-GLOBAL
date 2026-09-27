@@ -15,6 +15,7 @@ SHERE MUSIC is a full-stack music discovery, streaming and download platform. Li
 - [Environment variables](#environment-variables)
 - [Supabase setup](#supabase-setup)
 - [Resend setup](#resend-setup)
+- [Payments (Paystack)](#payments-paystack)
 - [Local development](#local-development)
 - [Admin setup](#admin-setup)
 - [Production deployment](#production-deployment)
@@ -36,7 +37,7 @@ SHERE MUSIC is a full-stack music discovery, streaming and download platform. Li
 
 ## Features
 
-**Listeners** — home page (featured, trending, latest releases, genres, popular artists, featured playlists, recently added) · discover with genre filters, sorting and infinite scroll · debounced live search across titles, artists, albums and genres · song, artist, album, genre and playlist pages · persistent player (play/pause, seek, volume/mute, next/previous, queue, full-screen view on mobile, lock-screen controls via Media Session) · downloads of the original file with progress · favourites · playlists (create, rename, delete, cover image, public/private, add/remove songs) · profile with recently played and download history · account settings (name, avatar, password, delete account).
+**Listeners** — home page (featured, trending, latest releases, genres, popular artists, featured playlists, recently added) · discover with genre filters, sorting and infinite scroll · debounced live search across titles, artists, albums and genres · song, artist, album, genre and playlist pages · persistent player (play/pause, seek, volume/mute, next/previous, queue, full-screen view on mobile, lock-screen controls via Media Session) · downloads of the original file with progress (SHERE MUSIC Plus) · favourites · playlists (create, rename, delete, cover image, public/private, add/remove songs) · profile with recently played and download history · account settings (name, avatar, password, delete account).
 
 **Listening (2.0)** — personal home (recently played, made for you, because you listened, from artists you follow) · player with shuffle, repeat, editable queue, autoplay and resume · expanded player with artwork-matched colours · synced lyrics (tap a line to jump there) and a full-screen lyrics mode · follow artists, following feed and in-app notifications · public profiles at `/u/:username` · grouped search including lyric matches.
 
@@ -45,6 +46,8 @@ SHERE MUSIC is a full-stack music discovery, streaming and download platform. Li
 **Settings** — account, profile, playback, appearance (light / dark / system), accessibility (reduced motion, larger text, high contrast, larger controls), privacy, notifications, downloads (Wi-Fi only where supported), language, security (sign out other devices) and connected Google/Facebook accounts.
 
 **SHERE MUSIC STUDIO** (`/studio`) — creators manage one or more artist profiles, upload songs and music videos, write and sync lyrics (line editor, tap-to-sync, LRC import/export), request verification and see their own analytics and followers. Content moves through **draft → pending review → approved → published** (or **changes requested**), unless the admin turns on auto-publish.
+
+**Monetization** — **SHERE MUSIC Plus** (₦600/month, Paystack recurring subscription): device downloads, Plus offers and a PLUS badge; free listeners keep streaming, lyrics, playlists, favourites, follows and music videos · **paid artist submissions** (₦500 one-time per song): paying sends the song to admin review, never straight to publication · Settings → Billing & Membership (plan, next billing date, manage card, cancel, receipts) · Studio → Payments · admin revenue dashboard, payments, Plus members, artist submissions review and Plus offers. Prices, currency and on/off switches are in Admin → Settings → Monetization.
 
 **Accounts** — registration with email verification, login/logout, Google/Facebook sign-in and account linking, forgot/reset password, email change with confirmation, session revocation on password change, disabled-account handling.
 
@@ -125,6 +128,8 @@ cp frontend/.env.example frontend/.env
 | `COOKIE_SECURE`, `COOKIE_SAMESITE`, `COOKIE_DOMAIN` | no | Cookie overrides (see below) |
 | `MAX_AUDIO_MB`, `MAX_IMAGE_MB`, `MAX_VIDEO_MB` | no | Hard upload ceilings (defaults 50 / 5 / 500). Admin settings can lower them |
 | `LYRICS_API_URL`, `LYRICS_API_KEY` | no | Optional external lyrics provider. The URL may use `{artist}`, `{title}`, `{album}`, `{duration}`. Overrides the values in Admin → Settings → Lyrics; the key never reaches a browser |
+| `PAYSTACK_SECRET_KEY` | for payments | Paystack secret key — **server only**. `sk_test_…` = test mode, `sk_live_…` = live mode. Without it, checkout is unavailable |
+| `PAYSTACK_PUBLIC_KEY` | no | Not needed for the redirect checkout used today |
 | `TRUST_PROXY` | no | Number of proxies in front of the API (default 1 in production) |
 
 Generate a JWT secret:
@@ -152,7 +157,9 @@ Nothing secret ever goes in the frontend: every `VITE_*` value is bundled into p
    2. `backend/src/database/seed.sql` — starter genres (Afrobeats, Afropop, Hip-Hop, R&B, Gospel, Pop, Dance, Highlife, Amapiano, Reggae, Instrumental, Other)
    3. `backend/src/database/migrations/002_studio_video_lyrics.sql` — SHERE MUSIC 2.0: review workflow, Studio ownership, lyrics, music videos, subtitles, follows, notifications, user settings and connected accounts
 
-   All scripts are idempotent and safe to re-run. **Upgrading an existing 1.x database:** run only the 002 migration. Existing songs keep their published/draft state.
+   4. `backend/src/database/migrations/003_monetization.sql` — Plus subscriptions, payment transactions, artist submissions, Plus offers, webhook de-duplication, download types and revenue analytics
+
+   All scripts are idempotent and safe to re-run. **Upgrading an existing database:** run the migrations you have not run yet, in order. Existing songs keep their published/draft state.
 3. **Storage** — create the buckets (`music`, `media`, `videos`, `subtitles`), either:
    - `cd backend && npm run setup:storage` (uses your `.env`), **or**
    - run `backend/src/database/storage.sql` in the SQL editor.
@@ -182,10 +189,10 @@ Uploaded files are validated by their **actual bytes** (magic numbers), not the 
 
 ### Database design
 
-Tables: `users`, `auth_tokens`, `artists`, `albums`, `genres`, `songs`, `favorites`, `playlists`, `playlist_songs`, `plays`, `downloads`, `search_logs`, `site_settings`, and in 2.0 `user_settings`, `connected_accounts`, `notifications`, `artist_followers`, `lyrics`, `lyric_lines`, `music_videos`, `video_subtitles`, `video_views`.
+Tables: `users`, `auth_tokens`, `artists`, `albums`, `genres`, `songs`, `favorites`, `playlists`, `playlist_songs`, `plays`, `downloads`, `search_logs`, `site_settings`, and in 2.0 `user_settings`, `connected_accounts`, `notifications`, `artist_followers`, `lyrics`, `lyric_lines`, `music_videos`, `video_subtitles`, `video_views`, and for monetization `payment_transactions`, `plus_subscriptions`, `artist_submissions`, `payment_events`, `plus_offers`.
 
 Read models: `songs_view`, `artists_view`, `albums_view`, `genres_view`, `playlists_view`, `videos_view`.
-Functions: `record_play`, `record_download`, `record_video_view` (atomic counters), `trending_songs`, `trending_videos`, `popular_artists`, `admin_overview`, `daily_activity`, `top_songs_period`, `top_artists_period`, `top_searches`, `studio_overview`, `studio_daily_activity`, `studio_top_songs`, `replace_lyric_lines`.
+Functions: `record_play`, `record_download`, `record_video_view` (atomic counters), `trending_songs`, `trending_videos`, `popular_artists`, `admin_overview`, `daily_activity`, `top_songs_period`, `top_artists_period`, `top_searches`, `studio_overview`, `studio_daily_activity`, `studio_top_songs`, `replace_lyric_lines`, `has_active_plus`, `fulfill_payment`, `record_plus_renewal`, `monetization_summary`.
 
 Songs and videos have a `status` column (`draft`, `pending`, `approved`, `published`, `rejected`); `is_published` is generated from it. Artists can have an `owner_user_id`, and Studio access is always checked against that owner on the server. Synced lyrics store one row per line with `start_time_ms`.
 
@@ -198,6 +205,28 @@ Storage paths (not URLs) are saved in the database (`audio_path`, `artwork_path`
 3. Set `RESEND_FROM_EMAIL`, e.g. `SHERE MUSIC <no-reply@yourdomain.com>`.
 
 Emails sent: verification (*"Verify your SHERE MUSIC account"*), password reset (*"Reset your SHERE MUSIC password"*), and account notifications (password changed, account disabled/re-enabled, admin role granted/removed). Templates live in `backend/src/services/emailTemplates.js`.
+
+## Payments (Paystack)
+
+SHERE MUSIC sells two things through [Paystack](https://paystack.com): **SHERE MUSIC Plus** (monthly subscription, default ₦600) and **artist music submissions** (one-time, default ₦500). Prices are stored in kobo and set in *Admin → Settings → Monetization*; nothing is converted between currencies.
+
+**Setup**
+
+1. Run `003_monetization.sql` (see Supabase setup).
+2. In the Paystack dashboard → *Settings → API Keys & Webhooks*, copy the **secret key** into `backend/.env` as `PAYSTACK_SECRET_KEY` (start with the **test** key).
+3. Set the **webhook URL** to `https://<your-api-domain>/api/payments/paystack/webhook`. Use the test-mode webhook field for test keys and the live field for live keys.
+4. The Paystack plan for Plus is created automatically on the first Plus checkout (and again if you change the price, currency, or switch between test and live keys).
+
+**How it works**
+
+- The browser only says *what* to buy (Plus, or which song to submit). The API sets the amount, creates the transaction with a unique reference and redirects to Paystack's hosted checkout. The secret key never leaves the server.
+- A payment is fulfilled only with data from Paystack: the signed webhook (HMAC-SHA512 of the raw body with the secret key) or the verify API, which the return page calls. Fulfilment runs in one database function that locks the transaction row, so a duplicate webhook, a retry or a webhook racing the return page cannot grant Plus twice, create a second submission or send a second email. Exact duplicate webhook deliveries are also skipped (`payment_events`). Amounts or currencies that don't match are never fulfilled.
+- **Plus** is a real Paystack subscription. Renewals (`charge.success` / `invoice.update`) extend the paid period; `invoice.payment_failed` marks the membership as needing attention; cancelling (from Billing & Membership or Paystack) keeps Plus until the end of the paid period. Entitlement is computed on the server from stored periods (`has_active_plus`), never from anything the browser sends.
+- **Downloads:** `GET /api/songs/:id/download` requires a signed-in user with Plus (or an admin, or the song's own artist). The API streams the file itself — no storage link is ever handed to the browser — and records the download (with its type) only after every byte was sent. Free listeners get `403 PLUS_REQUIRED`, however the endpoint is called. If an admin turns Plus off, downloads return to every signed-in listener.
+- **Artist submissions:** with the fee on, *Submit for review* leads to a payment page. A failed or abandoned payment leaves the song as a draft; retrying reuses the same submission. After payment the song is *pending review* — it is never published automatically, and paying is not verification. Admin decisions (from *Artist Submissions* or the regular Reviews queue) update the submission and email the artist once.
+- **Offline listening** is not offered in the web app; Plus downloads save the original file to the device.
+
+**Testing in test mode:** use Paystack's [test cards](https://paystack.com/docs/payments/test-payments/). Webhooks cannot reach `localhost`; the return page verifies the payment itself, and the subscription is linked from the Paystack customer when you open Billing, so local testing works without a tunnel. To test webhooks locally, expose the API with a tunnel (for example `cloudflared tunnel --url http://localhost:5000`) and set that URL in the test webhook field.
 
 ## Local development
 
@@ -255,7 +284,8 @@ All responses are JSON: `{ "data": …, "meta"?: … }` on success and `{ "error
 | Health | `GET /api/health` |
 | Auth | `POST /api/auth/register · login · logout · verify-email · resend-verification · forgot-password · reset-password · change-password`, `GET /api/auth/me` |
 | Catalog | `GET /api/settings · /home · /search?q=` · `GET /api/songs` (q, genre, artist, album, featured, sort, page, limit) · `/songs/trending` · `/songs/:id` · `/songs/:id/related` · `/songs/:id/stream` |
-| Plays & downloads | `POST /api/songs/:id/play` · `POST /api/songs/:id/download` |
+| Plays & downloads | `POST /api/songs/:id/play` · `GET /api/songs/:id/download` (signed in + Plus; streams the file) |
+| Payments | `POST /api/payments/plus/initialize · /plus/cancel`, `GET /api/payments/plus/status · /plus/manage-link` · `GET /api/payments/artist/quote/:songId`, `POST /api/payments/artist/initialize` · `GET /api/payments/verify/:reference · /payments/history · /payments/offers` · `POST /api/payments/paystack/webhook` (Paystack only, signature-checked) |
 | Artists / albums / genres | `GET /api/artists`, `/artists/:id`, `/albums`, `/albums/:id`, `/genres`, `/genres/:slug` |
 | Me | `GET /api/me/profile · /me/downloads · /me/recent`, `PATCH /api/me`, `POST/DELETE /api/me/avatar`, `DELETE /api/me` |
 | Favorites | `GET /api/favorites`, `GET /api/favorites/ids`, `POST/DELETE /api/favorites/:songId` |
@@ -264,7 +294,7 @@ All responses are JSON: `{ "data": …, "meta"?: … }` on success and `{ "error
 | Videos | `GET /api/videos/home · /videos · /videos/:id · /videos/:id/related · /videos/:id/stream · /videos/:id/subtitles/:subtitleId`, `POST /api/videos/:id/view` |
 | Settings & account | `GET/PUT /api/me/settings` · `POST /api/me/email · /me/password · /me/sessions/revoke-others` · `GET /api/me/connected-accounts` · `POST /api/auth/oauth/:provider (+ /link)` · `POST /api/auth/confirm-email` |
 | Studio | `/api/studio/me · overview · analytics · followers · options` · `artists` (+ `/verification`) · `albums` · `songs` (+ `/submit`, `/publish`, `/preview`, `/lyrics`) · `videos` (+ `/upload-url`, `/complete-upload`, `/subtitles`, `/submit`, `/publish`). Every route is limited to artists the signed-in user owns |
-| Admin | `/api/admin/reviews` · `lyrics` · `videos` · `/api/admin/overview · analytics · downloads · reports/:type` · `songs` (CRUD, `/publish`, `/feature`, `/preview`) · `artists` · `albums` (+ `/songs`) · `genres` · `playlists` · `users` (+ `/status`, `/role`) · `settings` (+ `/logo`, `/favicon`) |
+| Admin | `/api/admin/monetization/settings · /monetization/summary · payments · plus-members · submissions (+ /review) · offers` · `/api/admin/reviews` · `lyrics` · `videos` · `/api/admin/overview · analytics · downloads · reports/:type` · `songs` (CRUD, `/publish`, `/feature`, `/preview`) · `artists` · `albums` (+ `/songs`) · `genres` · `playlists` · `users` (+ `/status`, `/role`) · `settings` (+ `/logo`, `/favicon`) |
 
 Every `/api/admin/*` route passes through `requireAdmin`, which re-reads the user's role from the database on each request.
 
@@ -280,3 +310,4 @@ Every `/api/admin/*` route passes through `requireAdmin`, which re-reads the use
 - RLS enabled on every table with no policies, and anon/authenticated grants revoked, so leaked public keys cannot read data.
 - Analytics store no IP addresses or user agents; search logs store only the query text.
 - CSV exports are protected against spreadsheet formula injection.
+- Payments: the Paystack secret key is server-only; webhooks are authenticated by signature; prices come from server settings; payment, subscription, submission and Plus states can only change through verified Paystack data (there is no manual "mark as paid"). Payment records never contain card details.

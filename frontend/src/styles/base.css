@@ -279,3 +279,7 @@ dd {
     display: inline-flex !important;
   }
 }
+
+[hidden] {
+  display: none !important;
+}

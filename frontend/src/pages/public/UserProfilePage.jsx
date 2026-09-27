@@ -9,6 +9,7 @@ import { useAsync } from '../../hooks/useAsync.js';
 import { useMeta } from '../../hooks/useMeta.js';
 import { musicService } from '../../services/musicService.js';
 import { formatDate } from '../../utils/format.js';
+import { ArtistBadge } from '../../components/plus/PlusBadge.jsx';
 
 /** Public listener profile. Everything shown respects the owner's privacy settings (enforced by the API). */
 export default function UserProfilePage() {
@@ -38,7 +39,9 @@ export default function UserProfilePage() {
         <Artwork src={profile.avatarUrl} alt={`${profile.name}'s profile picture`} rounded size={120} icon="user" className="profile-head__avatar" />
         <div className="profile-head__info">
           <p className="eyebrow">{profile.isArtist ? 'Artist · Listener' : 'Listener'}</p>
-          <h1 className="page-title">{profile.name}</h1>
+          <h1 className="page-title">
+            {profile.name} {profile.isArtist ? <ArtistBadge /> : null}
+          </h1>
           <p className="text-muted">
             {profile.username ? `@${profile.username} · ` : ''}
             {profile.location ? `${profile.location} · ` : ''}Joined {formatDate(profile.createdAt, { year: 'numeric', month: 'long' })}

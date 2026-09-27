@@ -5,6 +5,17 @@ import * as users from '../controllers/admin/users.controller.js';
 import * as insights from '../controllers/admin/insights.controller.js';
 import * as settings from '../controllers/admin/settings.controller.js';
 import * as reviews from '../controllers/admin/reviews.controller.js';
+import * as monetization from '../controllers/admin/monetization.controller.js';
+import {
+  adminPaymentsQuery,
+  monetizationSettingsSchema,
+  offerSchema,
+  offerUpdateSchema,
+  plusMembersQuery,
+  submissionReviewSchema,
+  submissionsQuery,
+  summaryQuery,
+} from '../validators/payments.validators.js';
 import { adminListLyrics, lyricsHandlers } from '../controllers/shared/lyrics.handlers.js';
 import { videoHandlers } from '../controllers/shared/video.handlers.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -145,5 +156,20 @@ router.get('/settings', settings.getAdminSettings);
 router.put('/settings', validate(settingsSchema), settings.updateSettings);
 router.post('/settings/logo', uploadLimiter, singleImage('image'), settings.uploadLogo);
 router.post('/settings/favicon', uploadLimiter, singleImage('image'), settings.uploadFavicon);
+
+// Monetization: prices, revenue, payments, Plus members, paid submissions and offers
+router.get('/monetization/settings', monetization.getMonetizationSettings);
+router.put('/monetization/settings', validate(monetizationSettingsSchema), monetization.updateMonetizationSettings);
+router.get('/monetization/summary', validate(summaryQuery, 'query'), monetization.summary);
+router.get('/payments', validate(adminPaymentsQuery, 'query'), monetization.payments);
+router.get('/plus-members', validate(plusMembersQuery, 'query'), monetization.plusMembers);
+router.get('/plus-members/:id', validate(idParam, 'params'), monetization.plusMember);
+router.get('/submissions', validate(submissionsQuery, 'query'), monetization.submissions);
+router.get('/submissions/:id', validate(idParam, 'params'), monetization.submission);
+router.post('/submissions/:id/review', validate(idParam, 'params'), validate(submissionReviewSchema), monetization.reviewSubmission);
+router.get('/offers', monetization.listOffers);
+router.post('/offers', uploadLimiter, singleImage('image'), validate(offerSchema), monetization.createOffer);
+router.patch('/offers/:id', uploadLimiter, validate(idParam, 'params'), singleImage('image'), validate(offerUpdateSchema), monetization.updateOffer);
+router.delete('/offers/:id', validate(idParam, 'params'), monetization.deleteOffer);
 
 export default router;

@@ -7,7 +7,7 @@ const escapeHtml = (value) =>
 
 const COLORS = { bg: '#0b0f17', card: '#121826', text: '#e6eaf2', muted: '#9aa4b8', sky: '#1fcf7c', gold: '#ffffff' };
 
-function layout({ siteName, preheader, heading, paragraphs, cta, notice }) {
+function layout({ siteName, preheader, heading, paragraphs, cta, notice, extraHtml = '' }) {
   const brand = escapeHtml(siteName);
   const body = paragraphs.map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${COLORS.text};">${p}</p>`).join('');
   const button = cta
@@ -31,7 +31,7 @@ function layout({ siteName, preheader, heading, paragraphs, cta, notice }) {
     </td></tr>
     <tr><td style="background:${COLORS.card};border-radius:16px;padding:32px 28px;border:1px solid #1f2937;">
       <h1 style="margin:0 0 20px;font-size:22px;line-height:1.3;color:#ffffff;">${escapeHtml(heading)}</h1>
-      ${body}${button}${security}
+      ${body}${extraHtml}${button}${security}
     </td></tr>
     <tr><td style="padding:20px 8px;font-size:12px;line-height:1.6;color:${COLORS.muted};text-align:center;">
       ${brand} &middot; Discover music. Stream music. Download music.<br>
@@ -123,5 +123,33 @@ export function changeEmailEmail({ siteName, name, url, newEmail }) {
       notice: 'If you did not request this change, ignore this email and your address will stay the same.',
     }),
     text: textVersion([`Hi ${name},`, `Confirm your new email address (${newEmail}):`, url]),
+  };
+}
+
+/**
+ * Payment and membership emails: a short message plus an optional receipt
+ * table (reference, amount, date). Never includes card details.
+ */
+export function paymentEmail({ siteName, name, heading, message, rows = [], cta, notice }) {
+  const table = rows.length
+    ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border-collapse:collapse;">${rows
+        .map(
+          ([label, value]) =>
+            `<tr><td style="padding:8px 0;border-bottom:1px solid #1f2937;font-size:13px;color:${COLORS.muted};">${escapeHtml(label)}</td><td style="padding:8px 0;border-bottom:1px solid #1f2937;font-size:14px;color:${COLORS.text};text-align:right;font-weight:600;">${escapeHtml(value)}</td></tr>`
+        )
+        .join('')}</table>`
+    : '';
+  return {
+    subject: `${heading} — ${siteName}`,
+    html: layout({
+      siteName,
+      preheader: message,
+      heading,
+      paragraphs: [`Hi ${escapeHtml(name)},`, escapeHtml(message)],
+      extraHtml: table,
+      cta,
+      notice: notice ? escapeHtml(notice) : undefined,
+    }),
+    text: textVersion([`Hi ${name},`, message, ...rows.map(([l, v]) => `${l}: ${v}`), cta?.url]),
   };
 }

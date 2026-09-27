@@ -72,6 +72,13 @@ export const env = Object.freeze({
     maxImageMb: Math.max(1, int(process.env.MAX_IMAGE_MB, 5)),
     maxVideoMb: Math.max(1, int(process.env.MAX_VIDEO_MB, 500)),
   },
+  // Paystack. The secret key never leaves the server. sk_test_… = test mode, sk_live_… = live mode.
+  paystack: {
+    secretKey: process.env.PAYSTACK_SECRET_KEY || '',
+    publicKey: process.env.PAYSTACK_PUBLIC_KEY || '',
+    baseUrl: (process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co').replace(/\/+$/, ''),
+    mode: (process.env.PAYSTACK_SECRET_KEY || '').startsWith('sk_live_') ? 'live' : 'test',
+  },
   // Optional external lyrics provider. When set, these override the values saved in admin settings.
   lyrics: {
     apiUrl: process.env.LYRICS_API_URL || '',

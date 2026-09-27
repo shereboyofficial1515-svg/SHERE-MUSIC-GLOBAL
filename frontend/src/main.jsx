@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { PreferencesProvider } from './context/PreferencesContext.jsx';
 import { PlayerProvider } from './context/PlayerContext.jsx';
 import { DownloadProvider } from './context/DownloadContext.jsx';
+import { PlusProvider } from './context/PlusContext.jsx';
 import { LibraryProvider } from './context/LibraryContext.jsx';
 import './styles/tokens.css';
 import './styles/base.css';
@@ -20,6 +21,7 @@ import './styles/player.css';
 import './styles/video.css';
 import './styles/settings.css';
 import './styles/admin.css';
+import './styles/plus.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -30,13 +32,15 @@ createRoot(document.getElementById('root')).render(
             <AuthProvider>
               <PreferencesProvider>
                 <PlayerProvider>
-                  <DownloadProvider>
-                    <LibraryProvider>
-                      <Suspense fallback={<PageLoader />}>
-                        <App />
-                      </Suspense>
-                    </LibraryProvider>
-                  </DownloadProvider>
+                  <PlusProvider>
+                    <DownloadProvider>
+                      <LibraryProvider>
+                        <Suspense fallback={<PageLoader />}>
+                          <App />
+                        </Suspense>
+                      </LibraryProvider>
+                    </DownloadProvider>
+                  </PlusProvider>
                 </PlayerProvider>
               </PreferencesProvider>
             </AuthProvider>

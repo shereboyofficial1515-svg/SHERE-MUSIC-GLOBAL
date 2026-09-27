@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/ui/Icon.jsx';
 import Artwork from '../../components/ui/Artwork.jsx';
 import { ConfirmDialog } from '../../components/ui/Dialog.jsx';
@@ -12,12 +12,17 @@ import { useMeta } from '../../hooks/useMeta.js';
 import { studioService } from '../../services/studioService.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useSettings } from '../../context/SettingsContext.jsx';
-import { formatCount, formatDuration, timeAgo } from '../../utils/format.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { formatCount, formatDuration, formatMoney, timeAgo } from '../../utils/format.js';
 
 export default function StudioMusicPage() {
   useMeta({ title: 'My Music · Studio', noindex: true });
   const toast = useToast();
   const { settings } = useSettings();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const fee = settings.monetization?.artistSubmission;
+  const feeLabel = user?.role !== 'admin' && fee?.enabled ? formatMoney(fee.fee, settings.monetization.currency) : null;
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
@@ -33,7 +38,8 @@ export default function StudioMusicPage() {
       setData((list) => list.map((s) => (s.id === song.id ? res.data : s)));
       toast.success(res.meta?.message);
     } catch (err) {
-      toast.error(err.message);
+      if (err.code === 'SUBMISSION_FEE_REQUIRED') navigate(`/studio/submit/${song.id}`);
+      else toast.error(err.message);
     } finally {
       setBusyId(null);
     }
@@ -121,7 +127,12 @@ export default function StudioMusicPage() {
                   <td className="num hide-sm">{formatCount(song.downloadCount)}</td>
                   <td>
                     <div className="table__actions">
-                      {['draft', 'rejected'].includes(song.status) ? (
+                      {['draft', 'rejected'].includes(song.status) && feeLabel ? (
+                        <Link to={`/studio/submit/${song.id}`} className="btn btn--ghost btn--sm" title={`Submission fee: ${feeLabel}`}>
+                          Submit · {feeLabel}
+                        </Link>
+                      ) : null}
+                      {['draft', 'rejected'].includes(song.status) && !feeLabel ? (
                         <button type="button" className="btn btn--ghost btn--sm" onClick={() => act(song, 'submit')} disabled={busyId === song.id}>
                           {settings.artistAutoPublish ? 'Publish' : 'Submit'}
                         </button>

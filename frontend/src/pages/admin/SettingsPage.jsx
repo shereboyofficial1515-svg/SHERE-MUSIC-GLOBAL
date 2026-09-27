@@ -31,7 +31,115 @@ const TABS = [
   ['access', 'Access', 'lock'],
   ['appearance', 'Appearance', 'sun'],
   ['notifications', 'Notifications', 'bell'],
+  ['monetization', 'Monetization', 'credit-card'],
 ];
+
+const CURRENCIES = [
+  ['NGN', 'Nigerian naira (NGN)'],
+  ['USD', 'US dollar (USD)'],
+  ['GHS', 'Ghanaian cedi (GHS)'],
+  ['ZAR', 'South African rand (ZAR)'],
+  ['KES', 'Kenyan shilling (KES)'],
+];
+
+/** Prices, currency and switches for Plus and paid submissions (its own form and endpoint). */
+function MonetizationSettings() {
+  const toast = useToast();
+  const { refresh } = useSettings();
+  const { data, loading, error, reload, setData } = useAsync(() => adminService.monetizationSettings(), []);
+  const [form, setForm] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!data) return;
+    setForm({
+      plusEnabled: data.plus.enabled,
+      plusPrice: String(data.plus.price / 100),
+      plusBenefits: (data.plus.benefits || []).join('\n'),
+      artistSubmissionEnabled: data.artistSubmission.enabled,
+      artistSubmissionFee: String(data.artistSubmission.fee / 100),
+      currency: data.currency,
+    });
+  }, [data]);
+
+  if (error) return <ErrorState error={error} onRetry={reload} />;
+  if (loading || !form) return <PageLoader />;
+  const set = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e?.target ? e.target.value : e }));
+    setErrors((er) => ({ ...er, [key]: undefined }));
+  };
+
+  const save = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const res = await adminService.saveMonetizationSettings({
+        plusEnabled: form.plusEnabled,
+        plusPrice: Number(form.plusPrice),
+        plusBenefits: form.plusBenefits.split('\n').map((b) => b.trim()).filter(Boolean),
+        artistSubmissionEnabled: form.artistSubmissionEnabled,
+        artistSubmissionFee: Number(form.artistSubmissionFee),
+        currency: form.currency,
+      });
+      setData(res.data);
+      await refresh();
+      toast.success('Monetization settings saved.');
+    } catch (err) {
+      setErrors(err.fieldErrors || {});
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={save} className="stack" noValidate>
+      {!data.paystack.configured ? (
+        <Alert type="warning">Paystack is not configured on the server. Add PAYSTACK_SECRET_KEY to the backend environment to take payments.</Alert>
+      ) : (
+        <Alert type="info">
+          Paystack is connected in <strong>{data.paystack.mode === 'live' ? 'live' : 'test'}</strong> mode. Webhook URL: <span className="mono">{`<your API domain>${data.paystack.webhookUrl}`}</span>
+        </Alert>
+      )}
+      <section className="panel stack">
+        <h3 className="panel__title">SHERE MUSIC Plus</h3>
+        <Toggle
+          label="Sell SHERE MUSIC Plus"
+          description="When off, Plus is not sold and every signed-in listener can download again (as before Plus). Current members keep their paid period."
+          checked={form.plusEnabled}
+          onChange={set('plusEnabled')}
+        />
+        <TextField label="Monthly price" type="number" min={50} step="0.01" value={form.plusPrice} onChange={set('plusPrice')} error={errors.plusPrice} hint={`In ${form.currency}. Changing it creates a new Paystack plan for new members; existing members keep the price they signed up at.`} />
+        <TextArea label="Benefits (one per line)" value={form.plusBenefits} onChange={set('plusBenefits')} error={errors.plusBenefits} rows={4} hint="Shown on the Plus page and upgrade prompt. List only features that are actually available." />
+      </section>
+      <section className="panel stack">
+        <h3 className="panel__title">Artist music submissions</h3>
+        <Toggle
+          label="Charge a submission fee"
+          description="Artists pay once per song submission. Paid songs go to review; they are never published automatically. Admin accounts never pay."
+          checked={form.artistSubmissionEnabled}
+          onChange={set('artistSubmissionEnabled')}
+        />
+        <TextField label="Submission fee" type="number" min={50} step="0.01" value={form.artistSubmissionFee} onChange={set('artistSubmissionFee')} error={errors.artistSubmissionFee} hint={`In ${form.currency}.`} />
+      </section>
+      <section className="panel stack">
+        <Select label="Currency" value={form.currency} onChange={set('currency')} error={errors.currency} hint="Prices are charged exactly as entered — nothing is converted. Your Paystack account must support the currency.">
+          {CURRENCIES.map(([code, label]) => (
+            <option key={code} value={code}>
+              {label}
+            </option>
+          ))}
+        </Select>
+      </section>
+      <div className="settings-grid__actions">
+        <button type="submit" className="btn btn--primary btn--lg" disabled={busy}>
+          {busy ? 'Saving…' : 'Save monetization settings'}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 function BrandingField({ kind, label, currentUrl, hint, onUpdated }) {
   const toast = useToast();
@@ -221,7 +329,8 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <form onSubmit={save} className="stack" noValidate>
+      {tab === 'monetization' ? <MonetizationSettings /> : null}
+      <form onSubmit={save} className="stack" noValidate hidden={tab === 'monetization'}>
         {tab === 'general' ? (
           <section className="panel stack">
             <TextField label="Website name" value={form.siteName} onChange={set('siteName')} error={errors.siteName} maxLength={60} required />
@@ -299,7 +408,7 @@ export default function SettingsPage() {
         {tab === 'studio' ? (
           <section className="panel stack">
             <Toggle label="Allow artist sign-ups" description="Listeners can create an artist profile in Studio." checked={form.allowArtistSignup} onChange={set('allowArtistSignup')} />
-            <Toggle label="Publish without review" description="When on, artists' submissions go live immediately. When off (recommended), an admin approves each song, lyric and video." checked={form.artistAutoPublish} onChange={set('artistAutoPublish')} />
+            <Toggle label="Publish without review" description="When on, artists' submissions go live immediately. When off (recommended), an admin approves each song, lyric and video. Songs submitted with a paid submission fee always go to review." checked={form.artistAutoPublish} onChange={set('artistAutoPublish')} />
           </section>
         ) : null}
 
@@ -337,7 +446,7 @@ export default function SettingsPage() {
           </section>
         ) : null}
 
-        {tab !== 'branding' ? (
+        {tab !== 'branding' && tab !== 'monetization' ? (
           <div className="settings-grid__actions">
             <button type="submit" className="btn btn--primary btn--lg" disabled={busy}>
               {busy ? 'Saving…' : 'Save settings'}

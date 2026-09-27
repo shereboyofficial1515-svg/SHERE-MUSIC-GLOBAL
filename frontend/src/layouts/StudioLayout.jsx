@@ -27,6 +27,7 @@ const NAV = [
     label: 'Account',
     links: [
       { to: '/studio/artists', label: 'Artists', icon: 'mic' },
+      { to: '/studio/payments', label: 'Payments', icon: 'receipt' },
       { to: '/studio/profile', label: 'Profile', icon: 'user' },
       { to: '/studio/settings', label: 'Settings', icon: 'settings' },
     ],

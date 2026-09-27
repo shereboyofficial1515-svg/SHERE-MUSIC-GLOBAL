@@ -1,5 +1,6 @@
 import { badRequest } from '../utils/AppError.js';
 import { notifyArtistOwner, notifyFollowersOfRelease } from './notification.service.js';
+import { notifySubmissionDecision } from './payments/payment.service.js';
 
 /**
  * Shared review workflow for creator content (songs, music videos, lyrics):
@@ -70,6 +71,10 @@ export async function afterStatusChange(kind, before, after) {
   const firstPublish = after.status === 'published' && before.status !== 'published' && !before.published_at;
   if (firstPublish && kind !== 'lyrics') {
     notifyFollowersOfRelease(kind, { artistId: after.artist_id || before.artist_id, artistName: before.artist_name, title, id: before.id });
+  }
+  // Paid submissions are synced by a database trigger; email the artist about the decision (once).
+  if (kind === 'song' && before.status === 'pending' && ['approved', 'published', 'rejected'].includes(after.status)) {
+    notifySubmissionDecision(before.id);
   }
   if (before.status === 'pending' && ['approved', 'published', 'rejected'].includes(after.status) && before.artist_id) {
     const link = kind === 'video' ? '/studio/videos' : kind === 'lyrics' ? '/studio/lyrics' : '/studio/music';

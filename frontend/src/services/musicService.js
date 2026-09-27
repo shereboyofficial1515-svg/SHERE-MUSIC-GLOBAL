@@ -13,7 +13,6 @@ export const musicService = {
   lyrics: (id, lang) => api.get(`/songs/${id}/lyrics`, { query: { lang } }),
   streamUrl: (id) => api.get(`/songs/${id}/stream`),
   recordPlay: (id) => api.post(`/songs/${id}/play`),
-  requestDownload: (id) => api.post(`/songs/${id}/download`),
 
   artists: (query) => api.get('/artists', { query }),
   artist: (id) => api.get(`/artists/${id}`),

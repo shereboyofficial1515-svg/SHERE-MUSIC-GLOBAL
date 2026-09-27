@@ -22,7 +22,7 @@ export function StatCard({ label, value, icon, hint, tone = 'sky' }) {
       </span>
       <div>
         <p className="stat-card__label">{label}</p>
-        <p className="stat-card__value">{value === undefined ? '—' : formatNumber(value)}</p>
+        <p className="stat-card__value">{value === undefined ? '—' : typeof value === 'string' ? value : formatNumber(value)}</p>
         {hint ? <p className="stat-card__hint">{hint}</p> : null}
       </div>
     </div>

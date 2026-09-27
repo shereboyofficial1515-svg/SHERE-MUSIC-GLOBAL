@@ -14,6 +14,7 @@ import { userService } from '../../services/userService.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useLibrary } from '../../context/LibraryContext.jsx';
 import { cx, formatCount, formatDate, formatDateTime } from '../../utils/format.js';
+import { ArtistBadge, PlusBadge } from '../../components/plus/PlusBadge.jsx';
 
 const TABS = [
   { id: 'recent', label: 'Recently played', icon: 'clock' },
@@ -87,7 +88,9 @@ export default function ProfilePage() {
         <Artwork src={user.avatarUrl} alt={`${user.name} profile picture`} rounded size={112} icon="user" className="profile-head__avatar" />
         <div className="profile-head__info">
           <p className="eyebrow">Your library</p>
-          <h1 className="page-title">{user.name}</h1>
+          <h1 className="page-title">
+            {user.name} {user.plus?.active ? <PlusBadge /> : null} {user.role === 'artist' ? <ArtistBadge /> : null}
+          </h1>
           <p className="text-muted">
             {user.email} · Member since {formatDate(user.createdAt, { year: 'numeric', month: 'long' })}
           </p>

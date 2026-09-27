@@ -34,6 +34,16 @@ export default function AdminLayout() {
       ],
     },
     {
+      label: 'Monetization',
+      links: [
+        { to: '/admin/monetization', label: 'Revenue', icon: 'bar-chart' },
+        { to: '/admin/payments', label: 'Payments', icon: 'receipt' },
+        { to: '/admin/plus-members', label: 'Plus Members', icon: 'sparkles' },
+        { to: '/admin/submissions', label: 'Artist Submissions', icon: 'send' },
+        { to: '/admin/offers', label: 'Plus Offers', icon: 'gift' },
+      ],
+    },
+    {
       label: 'Platform',
       links: [
         { to: '/admin/users', label: 'Users', icon: 'users' },

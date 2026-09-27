@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase.js';
 import { unwrap } from '../utils/db.js';
 import { toUser } from './mappers.js';
+import { plusSummary } from './payments/plusEntitlement.service.js';
 
 /** Login methods for a user: whether a password is set and which OAuth providers are linked. */
 export async function loginMethods(userId) {
@@ -18,6 +19,6 @@ export async function loginMethods(userId) {
 
 /** Full "me" payload for the frontend: profile + login methods. */
 export async function toMe(userRow) {
-  const methods = await loginMethods(userRow.id);
-  return toUser(userRow, { providers: methods.providers, hasPassword: methods.hasPassword });
+  const [methods, plus] = await Promise.all([loginMethods(userRow.id), plusSummary(userRow.id)]);
+  return { ...toUser(userRow, { providers: methods.providers, hasPassword: methods.hasPassword }), plus };
 }

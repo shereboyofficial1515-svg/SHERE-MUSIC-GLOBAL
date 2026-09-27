@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
-import { AppError, notFound } from '../utils/AppError.js';
+import { Readable } from 'node:stream';
+import { AppError, forbidden, notFound } from '../utils/AppError.js';
 import { dbError, one, unwrap } from '../utils/db.js';
 import { ok, pageMeta, pageRange } from '../utils/http.js';
 import { cleanSearchTerm, ilikeAny } from '../utils/search.js';
@@ -7,9 +8,10 @@ import { SONG_FIELDS, toSong } from '../services/mappers.js';
 import { signedAudioUrl } from '../services/storage.service.js';
 import { downloadFilename } from '../services/song.service.js';
 import { getUserSettingsRow } from '../services/userSettings.service.js';
+import { downloadAccess } from '../services/payments/plusEntitlement.service.js';
+import { CSRF_HEADER, CSRF_VALUE } from '../middleware/security.js';
 
 const STREAM_TTL_SECONDS = 4 * 60 * 60; // long enough for seeking through a long listening session
-const DOWNLOAD_TTL_SECONDS = 120;
 
 const SORTS = {
   latest: [['created_at', false]],
@@ -111,18 +113,63 @@ export async function recordPlay(req, res) {
 }
 
 /**
- * Issue a signed download URL (Content-Disposition: attachment) for the original
- * file. The URL is only created — and the download only counted — if the file exists.
+ * Device download (GET /api/songs/:id/download).
+ *
+ *   signed in → song exists → entitled? (plusEntitlementService) → stream file
+ *
+ * Free listeners get 403 PLUS_REQUIRED no matter how the endpoint is called.
+ * The file is streamed through the API, so no reusable storage URL ever
+ * reaches the browser, and the download is recorded only after every byte
+ * was sent (an aborted or failed transfer is not counted).
  */
 export async function download(req, res) {
-  const song = await getPublishedSong(req.valid.params.id);
+  // Custom header required even for this GET: it has a side effect (the count),
+  // so other sites must not be able to trigger it with a plain link.
+  if (req.get(CSRF_HEADER) !== CSRF_VALUE) throw forbidden('Request blocked.', 'CSRF');
+
+  const song = await one(
+    supabase.from('songs_view').select(`${SONG_FIELDS},audio_path,audio_mime,audio_size,artist_owner_id`).eq('id', req.valid.params.id),
+    'Song not found.'
+  );
+  const access = await downloadAccess(req.user, song);
+  if (!access.allowed) {
+    throw new AppError(403, 'SHERE MUSIC Plus is required to download music to your device.', 'PLUS_REQUIRED');
+  }
+  // Unpublished music can only be downloaded by an admin or its own artist.
+  if (!song.is_published && !['admin_download', 'artist_download'].includes(access.type)) throw notFound('Song not found.');
+
+  const url = await signedAudioUrl(song.audio_path, { expiresIn: 60 });
+  let upstream;
+  try {
+    upstream = await fetch(url);
+  } catch {
+    throw new AppError(502, 'The download could not be started. Please try again.', 'STORAGE_ERROR');
+  }
+  if (upstream.status === 404 || upstream.status === 400) throw new AppError(404, "Sorry, this song's audio file is no longer available.", 'AUDIO_MISSING');
+  if (!upstream.ok || !upstream.body) throw new AppError(502, 'The download could not be started. Please try again.', 'STORAGE_ERROR');
+
   const filename = downloadFilename(song, song.audio_mime);
-  const url = await signedAudioUrl(song.audio_path, { expiresIn: DOWNLOAD_TTL_SECONDS, download: filename });
+  const expected = Number(upstream.headers.get('content-length')) || 0;
+  res.status(200).set({
+    'Content-Type': song.audio_mime || 'application/octet-stream',
+    'Content-Disposition': `attachment; filename="${filename.replace(/"/g, '')}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    'Cache-Control': 'private, no-store',
+    'X-Content-Type-Options': 'nosniff',
+    ...(expected ? { 'Content-Length': String(expected) } : {}),
+  });
 
-  // Download history is a user-facing feature, so signed-in downloads are always attributed.
-  const counted = unwrap(await supabase.rpc('record_download', { p_song_id: song.id, p_user_id: req.user?.id ?? null }));
-  if (!counted) throw new AppError(404, 'Song not found.', 'NOT_FOUND');
-
-  res.set('Cache-Control', 'private, no-store');
-  ok(res, { url, filename, mime: song.audio_mime });
+  let sent = 0;
+  const body = Readable.fromWeb(upstream.body);
+  body.on('data', (chunk) => (sent += chunk.length));
+  res.on('finish', () => {
+    if (expected && sent < expected) return;
+    supabase
+      .rpc('record_download', { p_song_id: song.id, p_user_id: req.user.id, p_type: access.type })
+      .then(({ error }) => error && console.error('[download] could not record download:', error.message));
+  });
+  res.on('close', () => {
+    if (!res.writableFinished) body.destroy();
+  });
+  body.on('error', () => res.destroy());
+  body.pipe(res);
 }

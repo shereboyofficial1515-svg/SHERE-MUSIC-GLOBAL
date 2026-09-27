@@ -5,6 +5,8 @@ import { Spinner } from '../ui/Feedback.jsx';
 import { usePlayer } from '../../context/PlayerContext.jsx';
 import { useLibrary } from '../../context/LibraryContext.jsx';
 import { useDownload } from '../../context/DownloadContext.jsx';
+import { usePlus } from '../../context/PlusContext.jsx';
+import { PlusBadge } from '../plus/PlusBadge.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useDismiss } from '../../hooks/useDismiss.js';
 import { cx } from '../../utils/format.js';
@@ -65,23 +67,28 @@ export const FavoriteButton = memo(function FavoriteButton({ song, className, wi
 
 export const DownloadButton = memo(function DownloadButton({ song, className, withLabel = false }) {
   const { download, progress } = useDownload();
+  const { canDownload, plusEnabled } = usePlus();
   const value = progress[song.id];
   const busy = value !== undefined;
   const label = busy ? (value >= 0 ? `Downloading ${value}%` : 'Preparing…') : 'Download';
+  // Visible to everyone; marked PLUS for listeners who need Plus to use it.
+  const locked = plusEnabled && !canDownload;
   return (
     <button
       type="button"
-      className={cx(withLabel ? 'btn btn--primary' : 'icon-btn', className)}
+      className={cx(withLabel ? 'btn btn--primary' : 'icon-btn', 'download-btn', className)}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         download(song);
       }}
       disabled={busy}
-      aria-label={withLabel ? undefined : busy ? `${label}: ${song.title}` : `Download ${song.title}`}
+      aria-label={withLabel ? undefined : busy ? `${label}: ${song.title}` : `Download ${song.title}${locked ? ' (Plus)' : ''}`}
+      title={locked ? 'Download with SHERE MUSIC Plus' : undefined}
     >
       {busy ? <Spinner size={16} label={label} /> : <Icon name="download" size={18} />}
       {withLabel ? label : null}
+      {locked && !busy ? <PlusBadge className={withLabel ? undefined : 'tag-badge--corner'} /> : null}
     </button>
   );
 });
@@ -117,13 +124,14 @@ export const SongMenu = memo(function SongMenu({ song, extraItems = [] }) {
   const { addToQueue } = usePlayer();
   const { openAddToPlaylist, toggleFavorite, isFavorite } = useLibrary();
   const { download } = useDownload();
+  const { canDownload, plusEnabled } = usePlus();
 
   const items = [
     { icon: 'skip-forward', label: 'Play next', run: () => addToQueue(song, { next: true }) },
     { icon: 'list-music', label: 'Add to queue', run: () => addToQueue(song) },
     { icon: 'list-plus', label: 'Add to playlist', run: () => openAddToPlaylist(song) },
     { icon: isFavorite(song.id) ? 'heart-filled' : 'heart', label: isFavorite(song.id) ? 'Remove from favorites' : 'Add to favorites', run: () => toggleFavorite(song) },
-    { icon: 'download', label: 'Download', run: () => download(song) },
+    { icon: 'download', label: canDownload || !plusEnabled ? 'Download' : 'Download (Plus)', run: () => download(song) },
     { icon: 'share', label: 'Share', run: () => shareSong(song, toast) },
     { icon: 'info', label: 'Song details', run: () => navigate(`/song/${song.id}`) },
     { icon: 'mic', label: 'Go to artist', run: () => navigate(`/artists/${song.artist.id}`) },

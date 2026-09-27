@@ -12,9 +12,10 @@ import { adminService } from '../../services/adminService.js';
 import { studioService } from '../../services/studioService.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useSettings } from '../../context/SettingsContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { AUDIO_ACCEPT, checkFile, readAudioDuration } from '../../utils/audio.js';
 import { looksLikeLrc, parseLrc, parsePlainLyrics } from '../../utils/lyricsEngine.js';
-import { formatBytes, formatDuration } from '../../utils/format.js';
+import { formatBytes, formatDuration, formatMoney } from '../../utils/format.js';
 
 const EMPTY = {
   title: '',
@@ -182,6 +183,11 @@ export default function SongEditor({ scope, id }) {
   const navigate = useNavigate();
   const toast = useToast();
   const { settings } = useSettings();
+  const { user } = useAuth();
+  // Paid submissions: creators (not admins) pay the submission fee to send a song for review.
+  const submissionFee = settings.monetization?.artistSubmission;
+  const feeRequired = !isAdmin && user?.role !== 'admin' && Boolean(submissionFee?.enabled);
+  const feeLabel = feeRequired ? formatMoney(submissionFee.fee, settings.monetization.currency) : null;
 
   const options = useAsync(async () => {
     if (!isAdmin) return studioService.options();
@@ -309,6 +315,7 @@ export default function SongEditor({ scope, id }) {
               : 'Upload complete. Saved as a draft.'
       );
       if (isEdit) existing.setData(res.data);
+      else if (feeRequired && submitForReview) navigate(`/studio/submit/${res.data.id}`, { replace: true });
       else navigate(`${base}/${res.data.id}${isAdmin ? '/edit' : ''}`, { replace: true });
     } catch (err) {
       if (err.code === 'ABORTED') toast.info('Upload cancelled.');
@@ -335,7 +342,8 @@ export default function SongEditor({ scope, id }) {
       setForm((f) => ({ ...f, status: res.data.status }));
       toast.success(res.meta?.message || 'Updated.');
     } catch (err) {
-      toast.error(err.message);
+      if (err.code === 'SUBMISSION_FEE_REQUIRED') navigate(`/studio/submit/${id}`);
+      else toast.error(err.message);
     }
   };
 
@@ -479,7 +487,14 @@ export default function SongEditor({ scope, id }) {
                 <Toggle label="Spotlight" description="Feature on the home page." checked={form.isFeatured} onChange={set('isFeatured')} />
               </>
             ) : isEdit ? (
-              <StudioWorkflow song={song} onAction={workflow} autoPublish={settings.artistAutoPublish} />
+              <StudioWorkflow song={song} onAction={workflow} autoPublish={settings.artistAutoPublish} feeLabel={feeLabel} />
+            ) : feeRequired ? (
+              <Toggle
+                label={`Continue to submit after upload (${feeLabel} fee)`}
+                description={`Music submission fee: ${feeLabel}. After uploading you'll review the submission and pay; the song is then sent to the SHERE MUSIC team for review. Leave off to keep it as a private draft.`}
+                checked={submitForReview}
+                onChange={setSubmitForReview}
+              />
             ) : (
               <Toggle
                 label={settings.artistAutoPublish ? 'Publish when uploaded' : 'Submit for review after upload'}
@@ -524,7 +539,7 @@ export default function SongEditor({ scope, id }) {
   );
 }
 
-function StudioWorkflow({ song, onAction, autoPublish }) {
+function StudioWorkflow({ song, onAction, autoPublish, feeLabel }) {
   const [busy, setBusy] = useState(false);
   const run = async (action) => {
     setBusy(true);
@@ -541,9 +556,20 @@ function StudioWorkflow({ song, onAction, autoPublish }) {
   return (
     <div className="stack-sm">
       <p className="text-muted">{text}</p>
-      <p className="field__hint">{autoPublish ? 'Submitting publishes immediately.' : 'Editing an approved or published song sends it back for review.'}</p>
+      <p className="field__hint">
+        {feeLabel
+          ? `Music submission fee: ${feeLabel}. Paid submissions are reviewed by the SHERE MUSIC team before going live.`
+          : autoPublish
+            ? 'Submitting publishes immediately.'
+            : 'Editing an approved or published song sends it back for review.'}
+      </p>
       <div className="row-gap wrap">
-        {['draft', 'rejected'].includes(song.status) ? (
+        {['draft', 'rejected'].includes(song.status) && feeLabel ? (
+          <Link to={`/studio/submit/${song.id}`} className="btn btn--primary">
+            <Icon name="send" size={16} /> Submit for review — {feeLabel}
+          </Link>
+        ) : null}
+        {['draft', 'rejected'].includes(song.status) && !feeLabel ? (
           <button type="button" className="btn btn--primary" onClick={() => run('submit')} disabled={busy}>
             <Icon name="send" size={16} /> {autoPublish ? 'Publish' : 'Submit for review'}
           </button>

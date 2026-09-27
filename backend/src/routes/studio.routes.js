@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import * as studio from '../controllers/studio.controller.js';
+import * as payments from '../controllers/payments.controller.js';
+import { historyQuery } from '../validators/payments.validators.js';
 import { lyricsHandlers } from '../controllers/shared/lyrics.handlers.js';
 import { videoHandlers } from '../controllers/shared/video.handlers.js';
 import { requireArtist, requireAuth } from '../middleware/auth.js';
@@ -37,6 +39,8 @@ router.post('/artists', requireAuth, uploadLimiter, artistImages, validate(artis
 router.use(requireArtist);
 
 router.get('/overview', studio.overview);
+// Studio → Payments: the creator's paid submissions (scoped to req.user in the controller)
+router.get('/submissions', validate(historyQuery, 'query'), payments.mySubmissions);
 router.get('/analytics', validate(analyticsQuery, 'query'), studio.analytics);
 router.get('/options', studio.options);
 router.get('/followers', validate(followersQuery, 'query'), studio.followers);

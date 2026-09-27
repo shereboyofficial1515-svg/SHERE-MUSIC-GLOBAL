@@ -29,6 +29,16 @@ const DEFAULTS = {
   artist_auto_publish: false,
   default_theme: 'dark',
   email_new_releases: true,
+  plus_enabled: true,
+  plus_price: 60000,
+  plus_benefits: ['Download music to your device', 'Plus-only offers', 'PLUS badge on your account'],
+  artist_submission_enabled: true,
+  artist_submission_fee: 50000,
+  payment_currency: 'NGN',
+  paystack_plan_code: null,
+  paystack_plan_amount: null,
+  paystack_plan_currency: null,
+  paystack_plan_mode: null,
 };
 
 const TTL_MS = 30_000;
@@ -91,6 +101,16 @@ export function toPublicSettings(s) {
     allowArtistSignup: s.allow_artist_signup,
     artistAutoPublish: s.artist_auto_publish,
     defaultTheme: s.default_theme,
+    monetization: toPublicMonetization(s),
+  };
+}
+
+/** Prices are stored in minor units (kobo); the API returns both forms. */
+export function toPublicMonetization(s) {
+  return {
+    currency: s.payment_currency,
+    plus: { enabled: s.plus_enabled, price: s.plus_price, interval: 'monthly', benefits: s.plus_benefits || [] },
+    artistSubmission: { enabled: s.artist_submission_enabled, fee: s.artist_submission_fee },
   };
 }
 

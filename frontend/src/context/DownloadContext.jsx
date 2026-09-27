@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { musicService } from '../services/musicService.js';
+import { API_BASE } from '../services/api.js';
 import { useToast } from './ToastContext.jsx';
 import { usePreferences } from './PreferencesContext.jsx';
+import { useAuth } from './AuthContext.jsx';
+import { usePlus } from './PlusContext.jsx';
 
 /** Network Information API (Chromium/Android). Unknown elsewhere → null. */
 const onCellular = () => {
@@ -23,25 +25,25 @@ function saveBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-/** Navigate to the signed URL; storage sends Content-Disposition: attachment. */
-function saveViaLink(url) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+function filenameFrom(res, song) {
+  const cd = res.headers.get('Content-Disposition') || '';
+  const star = cd.match(/filename\*=UTF-8''([^;]+)/i);
+  if (star) return decodeURIComponent(star[1]);
+  const plain = cd.match(/filename="([^"]+)"/i);
+  return plain ? plain[1] : `${song.artist?.name || 'SHERE MUSIC'} - ${song.title}.mp3`;
 }
 
 /**
- * Downloads the original stored file with progress. The API validates the song,
- * checks the file exists, records the download and returns a short-lived signed
- * URL. If streaming the bytes fails (e.g. storage CORS), it falls back to a
- * direct attachment link.
+ * Device downloads. The API decides who may download (Plus, admins, the
+ * song's own artist) and streams the file itself, so no storage link is ever
+ * handed to the browser. Free listeners see the Plus prompt instead and no
+ * request is made; a direct call to the API would get 403 anyway.
  */
 export function DownloadProvider({ children }) {
   const toast = useToast();
   const { prefs } = usePreferences();
+  const { user, refresh } = useAuth();
+  const { canDownload, openUpgrade } = usePlus();
   const [progress, setProgress] = useState({}); // songId → 0-100 | -1 (indeterminate)
 
   const setFor = (id, value) =>
@@ -55,6 +57,11 @@ export function DownloadProvider({ children }) {
   const download = useCallback(
     async (song) => {
       if (progress[song.id] !== undefined) return;
+      // Artists may download their own songs; the API decides, so let them try.
+      if (!user || (!canDownload && user.role !== 'artist')) {
+        openUpgrade('download');
+        return;
+      }
       // Settings → Downloads → "Only download on Wi-Fi" (where the browser can tell).
       if (prefs.wifiOnlyDownloads && onCellular()) {
         toast.warning('You are on mobile data. Downloads are set to Wi-Fi only (Settings → Downloads).');
@@ -62,19 +69,18 @@ export function DownloadProvider({ children }) {
       }
       const notify = prefs.downloadNotifications !== false;
       setFor(song.id, -1);
-      let signed;
       try {
-        ({ data: signed } = await musicService.requestDownload(song.id));
-      } catch (err) {
-        setFor(song.id, null);
-        toast.error(err.code === 'AUDIO_MISSING' ? 'Sorry, this song\'s audio file is no longer available.' : err.message);
-        return;
-      }
-
-      if (notify) toast.info(`Downloading "${song.title}"…`);
-      try {
-        const res = await fetch(signed.url);
-        if (!res.ok || !res.body) throw new Error('stream');
+        const res = await fetch(`${API_BASE}/songs/${song.id}/download`, {
+          credentials: 'include',
+          headers: { 'X-Requested-With': 'SHERE-MUSIC' },
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          const err = new Error(body?.error?.message || 'The download could not be started. Please try again.');
+          err.code = body?.error?.code;
+          throw err;
+        }
+        if (notify) toast.info(`Downloading "${song.title}"…`);
         const total = Number(res.headers.get('Content-Length')) || 0;
         const reader = res.body.getReader();
         const chunks = [];
@@ -86,16 +92,23 @@ export function DownloadProvider({ children }) {
           received += value.length;
           if (total) setFor(song.id, Math.round((received / total) * 100));
         }
-        saveBlob(new Blob(chunks, { type: signed.mime || 'audio/mpeg' }), signed.filename);
-        if (notify) toast.success(`Downloaded "${song.title}".`);
-      } catch {
-        saveViaLink(signed.url);
-        if (notify) toast.success(`Download started for "${song.title}".`);
+        if (total && received < total) throw new Error('The download was interrupted. Please try again.');
+        saveBlob(new Blob(chunks, { type: res.headers.get('Content-Type') || 'audio/mpeg' }), filenameFrom(res, song));
+        toast.success(notify ? `Download complete: "${song.title}".` : 'Download complete.');
+      } catch (err) {
+        if (err.code === 'PLUS_REQUIRED') {
+          await refresh(); // membership may have ended; update the UI
+          openUpgrade('download');
+        } else if (err.code === 'UNAUTHORIZED' || err.code === 'SESSION_EXPIRED') {
+          openUpgrade('download');
+        } else {
+          toast.error(err.message || 'The download failed. Please try again.');
+        }
       } finally {
         setFor(song.id, null);
       }
     },
-    [progress, toast, prefs.wifiOnlyDownloads, prefs.downloadNotifications]
+    [progress, toast, prefs.wifiOnlyDownloads, prefs.downloadNotifications, user, canDownload, openUpgrade, refresh]
   );
 
   const value = useMemo(() => ({ download, progress }), [download, progress]);

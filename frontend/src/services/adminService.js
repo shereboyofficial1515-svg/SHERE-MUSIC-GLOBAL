@@ -59,3 +59,20 @@ export const adminService = {
     return uploadWithProgress('POST', `/admin/settings/${kind}`, form).promise;
   },
 };
+
+// ─── Monetization ──────────────────────────────────────────────────────────
+Object.assign(adminService, {
+  monetizationSettings: () => api.get('/admin/monetization/settings'),
+  saveMonetizationSettings: (body) => api.put('/admin/monetization/settings', body),
+  monetizationSummary: (query) => api.get('/admin/monetization/summary', { query }),
+  payments: (query) => api.get('/admin/payments', { query }),
+  plusMembers: (query) => api.get('/admin/plus-members', { query }),
+  plusMember: (id) => api.get(`/admin/plus-members/${id}`),
+  submissions: (query) => api.get('/admin/submissions', { query }),
+  submission: (id) => api.get(`/admin/submissions/${id}`),
+  reviewSubmission: (id, body) => api.post(`/admin/submissions/${id}/review`, body),
+  offers: () => api.get('/admin/offers'),
+  createOffer: (form) => api.post('/admin/offers', form),
+  updateOffer: (id, form) => api.patch(`/admin/offers/${id}`, form),
+  deleteOffer: (id) => api.delete(`/admin/offers/${id}`),
+});

@@ -25,7 +25,8 @@ router.get('/songs/:id/related', validate(idParam, 'params'), songs.relatedSongs
 router.get('/songs/:id/lyrics', validate(idParam, 'params'), validate(lyricsQuery, 'query'), social.songLyrics);
 router.get('/songs/:id/stream', playLimiter, validate(idParam, 'params'), songs.streamUrl);
 router.post('/songs/:id/play', playLimiter, validate(idParam, 'params'), songs.recordPlay);
-router.post('/songs/:id/download', downloadLimiter, validate(idParam, 'params'), songs.download);
+// Device downloads: signed-in and entitled (Plus, admin or the song's own artist). Streams the file.
+router.get('/songs/:id/download', requireAuth, downloadLimiter, validate(idParam, 'params'), songs.download);
 
 router.get('/artists', validate(listQuery, 'query'), catalog.listArtists);
 router.get('/artists/:id', validate(idParam, 'params'), catalog.getArtist);

@@ -7,6 +7,14 @@ import { useMeta } from '../../hooks/useMeta.js';
 import { adminService } from '../../services/adminService.js';
 import { formatDateTime } from '../../utils/format.js';
 
+const TYPE_LABELS = {
+  plus_device_download: 'Plus',
+  admin_download: 'Admin',
+  artist_download: 'Artist (own song)',
+  free_download: 'Free (Plus off)',
+  legacy: 'Before Plus',
+};
+
 export default function DownloadsPage() {
   useMeta({ title: 'Downloads · Admin', noindex: true });
   const [params] = useSearchParams();
@@ -18,7 +26,7 @@ export default function DownloadsPage() {
     <>
       <AdminHeader
         title="Downloads"
-        description="Every download, newest first. Signed-out downloads are counted without a user."
+        description="Every completed device download, newest first."
         actions={
           <Link to="/admin/reports" className="btn btn--secondary">
             Export CSV
@@ -40,6 +48,7 @@ export default function DownloadsPage() {
               <tr>
                 <th scope="col">Song</th>
                 <th scope="col">User</th>
+                <th scope="col" className="hide-sm">Type</th>
                 <th scope="col">Date &amp; time</th>
               </tr>
             </thead>
@@ -68,6 +77,7 @@ export default function DownloadsPage() {
                       <span className="text-muted">Guest</span>
                     )}
                   </td>
+                  <td className="hide-sm text-muted">{TYPE_LABELS[d.type] || d.type}</td>
                   <td className="text-muted">{formatDateTime(d.downloadedAt)}</td>
                 </tr>
               ))}

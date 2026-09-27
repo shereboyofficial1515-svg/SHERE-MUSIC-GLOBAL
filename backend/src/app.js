@@ -13,6 +13,8 @@ import publicRoutes from './routes/public.routes.js';
 import libraryRoutes from './routes/library.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import studioRoutes from './routes/studio.routes.js';
+import paymentRoutes from './routes/payments.routes.js';
+import { paystackWebhook } from './controllers/payments.controller.js';
 
 export function createApp() {
   const app = express();
@@ -45,6 +47,13 @@ export function createApp() {
   );
 
   app.use(compression());
+
+  // Paystack webhook: raw body (the signature covers the exact bytes), no
+  // cookie session, CSRF header or maintenance gate. Authenticated by HMAC.
+  app.post('/api/payments/paystack/webhook', express.raw({ type: '*/*', limit: '1mb' }), (req, res, next) =>
+    paystackWebhook(req, res).catch(next)
+  );
+
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: false, limit: '100kb' }));
   app.use(cookieParser());
@@ -58,6 +67,7 @@ export function createApp() {
   api.use('/auth', authRoutes);
   api.use('/admin', adminRoutes);
   api.use('/studio', studioRoutes);
+  api.use('/payments', paymentRoutes);
   api.use('/', libraryRoutes);
   api.use('/', publicRoutes);
 

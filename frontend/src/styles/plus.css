@@ -1,0 +1,382 @@
+/* ─── SHERE MUSIC Plus, payments and billing ──────────────────────────────── */
+
+/* Small uppercase markers: PLUS, ARTIST */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.tag-badge--plus {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.tag-badge--artist {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.download-btn {
+  position: relative;
+}
+.tag-badge--corner {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  padding: 0 4px;
+  font-size: 8px;
+  pointer-events: none;
+}
+.btn .tag-badge {
+  margin-left: 2px;
+}
+
+/* ─── Upgrade dialog ─────────────────────────────────────────────────────── */
+.plus-dialog {
+  display: grid;
+  gap: 16px;
+}
+.plus-dialog__hero {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.plus-dialog__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.plus-dialog__headline {
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.plus-dialog__price {
+  color: var(--text-muted);
+}
+.plus-dialog__price strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  color: var(--text);
+}
+.plus-dialog__benefits,
+.plus-benefits {
+  display: grid;
+  gap: 10px;
+}
+.plus-dialog__benefits li,
+.plus-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.plus-dialog__benefits svg,
+.plus-benefits svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent-text);
+}
+
+/* ─── Plus page ──────────────────────────────────────────────────────────── */
+.plus-hero {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr);
+  padding: clamp(24px, 5vw, 48px);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-hero);
+  border: 1px solid var(--border);
+}
+@media (min-width: 900px) {
+  .plus-hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+    align-items: center;
+  }
+}
+.plus-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--accent-text);
+}
+.plus-hero__title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  margin: 8px 0 12px;
+}
+.plus-card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.plus-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--text-muted);
+}
+.plus-card__price strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  color: var(--text);
+}
+.plus-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.plus-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Offers */
+.offer-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+.offer-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.offer-card__media {
+  aspect-ratio: 16 / 9;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  color: var(--text-subtle);
+}
+.offer-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.offer-card__body {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 16px;
+}
+.offer-card--locked .offer-card__media {
+  filter: grayscale(0.6);
+  opacity: 0.75;
+}
+
+/* ─── Payment result ─────────────────────────────────────────────────────── */
+.payment-result {
+  max-width: 520px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(24px, 6vw, 48px) 20px;
+}
+.payment-result__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+.payment-result__icon--success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.payment-result__icon--error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.payment-result__icon--pending {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.receipt {
+  width: 100%;
+  display: grid;
+  gap: 0;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.receipt > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+.receipt > div:last-child {
+  border-bottom: 0;
+}
+.receipt dt {
+  color: var(--text-muted);
+}
+.receipt dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* ─── Billing ────────────────────────────────────────────────────────────── */
+.plan-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.plan-card--plus {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: linear-gradient(135deg, var(--accent-soft), transparent 70%), var(--surface-2);
+}
+.plan-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.plan-card__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+.pay-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.pay-status--success,
+.pay-status--active,
+.pay-status--approved,
+.pay-status--payment_successful {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.pay-status--failed,
+.pay-status--rejected,
+.pay-status--reversed,
+.pay-status--attention {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.pay-status--pending,
+.pay-status--payment_pending,
+.pay-status--pending_review,
+.pay-status--abandoned,
+.pay-status--non_renewing,
+.pay-status--cancelled {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+
+/* ─── Submit & pay (Studio) ──────────────────────────────────────────────── */
+.submit-pay {
+  max-width: 620px;
+  display: grid;
+  gap: 18px;
+}
+.submit-pay__fee {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.submit-pay__fee strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+}
+.submit-pay__song {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ─── Admin review drawer ────────────────────────────────────────────────── */
+.review-detail {
+  display: grid;
+  gap: 16px;
+}
+.review-detail__head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.review-detail dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.review-detail dt {
+  color: var(--text-muted);
+}
+.review-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.review-lyrics {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
+.range-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.dialog--lg {
+  max-width: 760px;
+}

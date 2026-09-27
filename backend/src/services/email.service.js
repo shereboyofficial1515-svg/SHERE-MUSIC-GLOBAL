@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import { env } from '../config/env.js';
 import { getSettings } from './settings.service.js';
-import { accountNotificationEmail, changeEmailEmail, passwordResetEmail, verificationEmail } from './emailTemplates.js';
+import { accountNotificationEmail, changeEmailEmail, passwordResetEmail, paymentEmail, verificationEmail } from './emailTemplates.js';
 
 const resend = env.resend.apiKey ? new Resend(env.resend.apiKey) : null;
 
@@ -60,4 +60,11 @@ export async function sendBatch(messages) {
     const { error } = await resend.batch.send(chunk);
     if (error) console.error('[email] Batch send failed:', error.message || error.name);
   }
+}
+
+/** Payment/membership email (never throws: payments must not fail because email did). */
+export async function sendPaymentEmail(user, { heading, message, rows, ctaLabel, ctaPath, notice }) {
+  const { site_name: siteName } = await getSettings();
+  const cta = ctaLabel ? { label: ctaLabel, url: `${env.frontendUrl}${ctaPath}` } : undefined;
+  await sendSafely(user.email, paymentEmail({ siteName, name: user.name, heading, message, rows, cta, notice }));
 }

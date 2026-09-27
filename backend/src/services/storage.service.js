@@ -17,6 +17,7 @@ export const FOLDERS = Object.freeze({
   branding: 'branding',
   covers: 'covers',
   thumbnails: 'thumbnails',
+  offers: 'offers',
 });
 
 /** Public URL for an object in the public media bucket. */

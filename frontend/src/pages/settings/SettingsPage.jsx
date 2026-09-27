@@ -12,6 +12,7 @@ import {
 } from '../../components/settings/PreferenceSections.jsx';
 import { AccountSection, ConnectedAccountsSection, FollowersSection, ProfileSection, SecuritySection } from '../../components/settings/AccountSections.jsx';
 import { DownloadsTab } from '../user/ProfilePage.jsx';
+import { BillingSection } from '../../components/settings/BillingSection.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useMeta } from '../../hooks/useMeta.js';
 import { cx } from '../../utils/format.js';
@@ -19,6 +20,7 @@ import { cx } from '../../utils/format.js';
 const SECTIONS = [
   { id: 'account', label: 'Account', icon: 'user', auth: true, Component: AccountSection },
   { id: 'profile', label: 'Profile', icon: 'edit', auth: true, Component: ProfileSection },
+  { id: 'billing', label: 'Billing & Membership', icon: 'credit-card', auth: true, Component: BillingSection },
   { id: 'playback', label: 'Music & Playback', icon: 'headphones', Component: PlaybackSection },
   { id: 'appearance', label: 'Appearance', icon: 'sun', Component: AppearanceSection },
   { id: 'accessibility', label: 'Accessibility', icon: 'accessibility', Component: AccessibilitySection },

@@ -202,3 +202,70 @@ export function toVideo(row, { manage = false } = {}) {
 export function toSubtitle(row) {
   return { id: row.id, language: row.language, label: row.label, format: row.format, isDefault: row.is_default, createdAt: row.created_at };
 }
+
+// ─── Payments ──────────────────────────────────────────────────────────────
+const PRODUCT_LABELS = { plus_subscription: 'SHERE MUSIC Plus', artist_submission: 'Music submission' };
+
+/** Payment record for history pages. No card or provider secrets. */
+export function toTransaction(row, { admin = false } = {}) {
+  return {
+    id: row.id,
+    reference: row.reference,
+    productType: row.product_type,
+    product: row.metadata?.description || PRODUCT_LABELS[row.product_type] || row.product_type,
+    amount: Number(row.amount),
+    currency: row.currency,
+    status: row.status,
+    isRenewal: Boolean(row.is_renewal),
+    paidAt: row.paid_at,
+    createdAt: row.created_at,
+    ...(admin
+      ? {
+          user: row.users ? { id: row.user_id, name: row.users.name, email: row.users.email } : row.user_id ? { id: row.user_id } : null,
+          channel: row.channel,
+          gatewayResponse: row.gateway_response,
+          customerCode: row.provider_customer_code,
+          productId: row.product_id,
+        }
+      : {}),
+  };
+}
+
+export function toSubmission(row) {
+  const tx = row.payment_transactions || null;
+  return {
+    id: row.id,
+    songId: row.song_id,
+    songTitle: row.song_title,
+    artistId: row.artist_id,
+    artistName: row.artist_name,
+    fee: Number(row.submission_fee),
+    currency: row.currency,
+    paymentStatus: row.payment_status,
+    reviewStatus: row.review_status,
+    rejectionReason: row.rejection_reason,
+    submittedAt: row.submitted_at,
+    reviewedAt: row.reviewed_at,
+    createdAt: row.created_at,
+    transaction: tx ? { id: tx.id, reference: tx.reference, status: tx.status, paidAt: tx.paid_at, amount: Number(tx.amount) } : null,
+    ...(row.users ? { user: { id: row.user_id, name: row.users.name, email: row.users.email } } : {}),
+  };
+}
+
+export function toOffer(row, { locked = false } = {}) {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    imageUrl: mediaUrl(row.image_path),
+    plusOnly: row.plus_only,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    locked,
+    ...(locked ? {} : { linkUrl: row.link_url, linkLabel: row.link_label }),
+  };
+}
+
+export function toAdminOffer(row) {
+  return { ...toOffer(row), isActive: row.is_active, sortOrder: row.sort_order, createdAt: row.created_at, updatedAt: row.updated_at };
+}

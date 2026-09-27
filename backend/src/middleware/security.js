@@ -30,4 +30,5 @@ export const authLimiter = limiter(15 * 60_000, 20, 'Too many attempts. Please w
 export const emailLimiter = limiter(60 * 60_000, 6, 'Too many emails requested. Please try again later.');
 export const playLimiter = limiter(60_000, 40, 'Too many requests.');
 export const downloadLimiter = limiter(60_000, 20, 'Too many downloads in a short time. Please wait a moment.');
+export const paymentLimiter = limiter(60_000, 10, 'Too many payment attempts. Please wait a moment.');
 export const uploadLimiter = limiter(60_000, 30, 'Too many uploads. Please wait a moment.');

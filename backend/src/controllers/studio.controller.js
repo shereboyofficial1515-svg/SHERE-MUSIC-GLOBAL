@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { USER_FIELDS } from '../middleware/auth.js';
-import { badRequest, conflict, forbidden } from '../utils/AppError.js';
+import { AppError, badRequest, conflict, forbidden } from '../utils/AppError.js';
 import { dbError, orderByIds, unwrap } from '../utils/db.js';
 import { created, noContent, ok, pageMeta, pageRange } from '../utils/http.js';
 import { cleanSearchTerm, ilikeAny } from '../utils/search.js';
@@ -18,6 +18,7 @@ import {
 import { afterStatusChange, creatorPublishPatch, statusAfterCreatorEdit, submitPatch } from '../services/review.service.js';
 import { toMe } from '../services/account.service.js';
 import { getSettingsForUsers } from '../services/userSettings.service.js';
+import { submissionFeeRequired } from '../services/payments/payment.service.js';
 
 /**
  * SHERE MUSIC STUDIO — everything is scoped to artist profiles owned by the
@@ -316,7 +317,9 @@ export async function createSong(req, res) {
   const body = req.valid.body;
   await loadOwnedArtist(req.user.id, body.artistId, 'id,owner_user_id');
   const settings = await getSettings();
-  const submit = req.body.submit === 'true' || req.body.submit === true;
+  // With paid submissions, a new song is saved as a draft; the creator submits it by paying the fee.
+  const paymentRequired = submissionFeeRequired(req.user, settings);
+  const submit = !paymentRequired && (req.body.submit === 'true' || req.body.submit === true);
   const workflow = submit ? submitPatch('draft', settings.artist_auto_publish) : { status: 'draft' };
   const song = await createSongRecord({
     columns: songColumns(body, SONG_FIELDS_ALLOWED),
@@ -326,7 +329,7 @@ export async function createSong(req, res) {
     workflow,
   });
   if (song.status === 'published') afterStatusChange('song', { ...song, status: 'draft', published_at: null }, song);
-  created(res, manage(song));
+  res.status(201).json({ data: manage(song), meta: { paymentRequired } });
 }
 
 export async function updateSong(req, res) {
@@ -349,6 +352,13 @@ export async function updateSong(req, res) {
 export async function submitSong(req, res) {
   const existing = await loadOwnedSong(req.user.id, req.valid.params.id, SONG_MANAGE_FIELDS);
   const settings = await getSettings();
+  if (submissionFeeRequired(req.user, settings)) {
+    throw new AppError(402, 'A submission fee is required to send this song for review.', 'SUBMISSION_FEE_REQUIRED', {
+      fee: Number(settings.artist_submission_fee),
+      currency: settings.payment_currency,
+      songId: existing.id,
+    });
+  }
   const song = await setSongWorkflow(existing, submitPatch(existing.status, settings.artist_auto_publish, { alreadyPublishedOnce: Boolean(existing.published_at) }));
   afterStatusChange('song', existing, song);
   ok(res, manage(song), { message: song.status === 'published' ? 'Song published.' : 'Song submitted for review.' });

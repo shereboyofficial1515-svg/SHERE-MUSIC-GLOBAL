@@ -48,7 +48,7 @@ export async function analytics(req, res) {
 /** Download log with song and (if signed in) user details. */
 export async function downloads(req, res) {
   const { song, page, limit } = req.valid.query;
-  let query = supabase.from('downloads').select('id,song_id,user_id,downloaded_at', { count: 'exact' });
+  let query = supabase.from('downloads').select('id,song_id,user_id,downloaded_at,download_type', { count: 'exact' });
   if (song) query = query.eq('song_id', song);
   const { from, to } = pageRange({ page, limit });
   const { data, count, error } = await query.order('downloaded_at', { ascending: false }).range(from, to);
@@ -68,6 +68,7 @@ export async function downloads(req, res) {
     data.map((d) => ({
       id: d.id,
       downloadedAt: d.downloaded_at,
+      type: d.download_type,
       song: songMap.has(d.song_id) ? { id: d.song_id, title: songMap.get(d.song_id).title, artist: songMap.get(d.song_id).artist_name } : null,
       user: d.user_id && userMap.has(d.user_id) ? userMap.get(d.user_id) : null,
     })),

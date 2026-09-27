@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { usePreferences } from '../../context/PreferencesContext.jsx';
 import { useSettings } from '../../context/SettingsContext.jsx';
+import { PlusBadge } from '../plus/PlusBadge.jsx';
 import { useDismiss } from '../../hooks/useDismiss.js';
 import { useScrollLock } from '../../hooks/useScrollLock.js';
 import { gsap, motionOK } from '../../utils/motion.js';
@@ -28,6 +29,7 @@ export function useNavGroups() {
         ...(settings.videosEnabled !== false ? [{ to: '/videos', label: 'Music Videos', icon: 'film' }] : []),
         { to: '/artists', label: 'Artists', icon: 'mic' },
         { to: '/albums', label: 'Albums', icon: 'disc' },
+        ...(settings.monetization?.plus?.enabled !== false ? [{ to: '/plus', label: 'SHERE MUSIC Plus', icon: 'sparkles' }] : []),
       ],
     },
     {
@@ -149,6 +151,7 @@ function UserMenu() {
     { to: user.username ? `/u/${user.username}` : `/u/${user.id}`, icon: 'user', label: 'Your profile' },
     { to: '/library', icon: 'clock', label: 'Listening history' },
     { to: '/studio', icon: 'layers', label: ['artist', 'admin'].includes(user.role) ? 'SHERE MUSIC STUDIO' : 'Become an artist' },
+    { to: user.plus?.active ? '/settings/billing' : '/plus', icon: 'sparkles', label: user.plus?.active ? 'Billing & Membership' : 'Get SHERE MUSIC Plus' },
     { to: '/settings', icon: 'settings', label: 'Settings' },
     ...(isAdmin ? [{ to: '/admin', icon: 'shield', label: 'Admin dashboard' }] : []),
   ];
@@ -161,7 +164,9 @@ function UserMenu() {
       {open ? (
         <div className="menu__list menu__list--right" role="menu">
           <div className="menu__header">
-            <strong>{user.name}</strong>
+            <strong>
+              {user.name} {user.plus?.active ? <PlusBadge /> : null}
+            </strong>
             <span className="text-muted text-sm">{user.email}</span>
           </div>
           {items.map((item) => (

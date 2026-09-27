@@ -59,6 +59,16 @@ const AdminLyrics = lazy(() => import('./pages/admin/LyricsPage.jsx'));
 const AdminSubtitles = lazy(() => import('./pages/admin/SubtitlesPage.jsx'));
 const AdminVideos = lazy(() => import('./pages/studio/StudioVideosPage.jsx').then((m) => ({ default: () => <m.VideoList scope="admin" /> })));
 
+const PlusPage = lazy(() => import('./pages/plus/PlusPage.jsx'));
+const PaymentReturnPage = lazy(() => import('./pages/plus/PaymentReturnPage.jsx'));
+const StudioSubmitPage = lazy(() => import('./pages/studio/StudioSubmitPage.jsx'));
+const StudioPaymentsPage = lazy(() => import('./pages/studio/StudioPaymentsPage.jsx'));
+const AdminMonetization = lazy(() => import('./pages/admin/MonetizationPage.jsx'));
+const AdminPayments = lazy(() => import('./pages/admin/PaymentsPage.jsx'));
+const AdminPlusMembers = lazy(() => import('./pages/admin/PlusMembersPage.jsx'));
+const AdminSubmissions = lazy(() => import('./pages/admin/SubmissionsPage.jsx'));
+const AdminOffers = lazy(() => import('./pages/admin/OffersPage.jsx'));
+
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'));
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage.jsx'));
 const AdminSongs = lazy(() => import('./pages/admin/SongsPage.jsx'));
@@ -110,6 +120,8 @@ export default function App() {
             <Route path="videos/browse" element={<VideosBrowsePage />} />
             <Route path="videos/:id" element={<VideoPage />} />
             <Route path="studio/welcome" element={guard(RequireAuth, StudioWelcomePage)} />
+            <Route path="plus" element={<PlusPage />} />
+            <Route path="payments/return" element={guard(RequireAuth, PaymentReturnPage)} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
@@ -141,6 +153,8 @@ export default function App() {
             <Route path="artists" element={<StudioArtistsPage />} />
             <Route path="profile" element={<StudioProfilePage />} />
             <Route path="settings" element={<StudioSettingsPage />} />
+            <Route path="submit/:songId" element={<StudioSubmitPage />} />
+            <Route path="payments" element={<StudioPaymentsPage />} />
           </Route>
 
           <Route path="admin" element={guard(RequireAdmin, AdminLayout)}>
@@ -165,6 +179,11 @@ export default function App() {
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="monetization" element={<AdminMonetization />} />
+            <Route path="payments" element={<AdminPayments />} />
+            <Route path="plus-members" element={<AdminPlusMembers />} />
+            <Route path="submissions" element={<AdminSubmissions />} />
+            <Route path="offers" element={<AdminOffers />} />
           </Route>
         </Routes>
       </MaintenanceGate>
