@@ -49,9 +49,23 @@ if (listError) {
   process.exit(1);
 }
 
+const save = (id, options, exists) => (exists ? supabase.storage.updateBucket(id, options) : supabase.storage.createBucket(id, options));
+
 for (const { id, options } of buckets) {
   const exists = existing.some((b) => b.id === id);
-  const { error } = exists ? await supabase.storage.updateBucket(id, options) : await supabase.storage.createBucket(id, options);
+  let { error } = await save(id, options, exists);
+  // The project's global file size limit (50 MB on the Free plan) is lower than
+  // the one requested: fall back to the global limit instead of failing.
+  if (error && /maximum allowed size/i.test(error.message)) {
+    const { fileSizeLimit, ...rest } = options;
+    ({ error } = await save(id, rest, exists));
+    if (!error) {
+      console.warn(
+        `! ${id}: ${Math.round(fileSizeLimit / MB)} MB is above your project's file size limit, so the project limit applies. ` +
+          'Set MAX_*_MB in .env (and Admin → Settings → Uploads) at or below it, or raise it in Supabase → Storage → Settings.'
+      );
+    }
+  }
   if (error) {
     console.error(`✗ ${id}: ${error.message}`);
     process.exitCode = 1;
