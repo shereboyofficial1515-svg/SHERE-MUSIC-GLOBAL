@@ -37,6 +37,12 @@
 .btn .tag-badge {
   margin-left: 2px;
 }
+/* On the solid green button the tag inverts so it stays readable */
+.btn--primary .tag-badge--plus {
+  background: var(--on-accent);
+  color: var(--accent);
+  border-color: transparent;
+}
 
 /* ─── Upgrade dialog ─────────────────────────────────────────────────────── */
 .plus-dialog {

@@ -13,7 +13,7 @@ import { useAsync } from '../../hooks/useAsync.js';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import { useMeta } from '../../hooks/useMeta.js';
 import { adminService } from '../../services/adminService.js';
-import { formatDate, formatDateTime, formatDuration, formatMoney } from '../../utils/format.js';
+import { formatBytes, formatDate, formatDateTime, formatDuration, formatMoney } from '../../utils/format.js';
 
 function Preview({ songId }) {
   const [src, setSrc] = useState(null);
@@ -131,7 +131,7 @@ function ReviewDialog({ id, onClose, onReviewed }) {
                 <dd>{formatDuration(s.song.duration)}</dd>
                 <dt>Audio file</dt>
                 <dd>
-                  {s.song.audio?.mime || '—'} · {s.song.audio?.size ? `${(s.song.audio.size / 1048576).toFixed(1)} MB` : '—'}
+                  {s.song.audio?.mime || '—'} · {s.song.audio?.size ? formatBytes(s.song.audio.size) : '—'}
                 </dd>
                 <dt>Description</dt>
                 <dd>{s.song.description || '—'}</dd>
