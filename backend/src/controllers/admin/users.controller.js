@@ -81,17 +81,24 @@ export async function setRole(req, res) {
   if (user.id === req.user.id) throw badRequest('You cannot change your own role.');
   if (user.role === role) return ok(res, toUser(user));
   if (role === 'admin' && !user.email_verified) throw badRequest('Only users with a verified email can become administrators.');
+  if (role === 'user') {
+    const { count } = await supabase.from('artists').select('id', { count: 'exact', head: true }).eq('owner_user_id', user.id);
+    if ((count ?? 0) > 0 && user.role === 'artist') {
+      throw conflict('This user still owns artist profiles. Reassign them in Artists first, or keep the artist role.');
+    }
+  }
   if (role === 'user' && user.role === 'admin' && (await activeAdminCount()) <= 1) {
     throw conflict('At least one active administrator is required.');
   }
   const updated = unwrap(await supabase.from('users').update({ role }).eq('id', user.id).select(USER_FIELDS).single());
   sendAccountNotification(updated, {
-    heading: role === 'admin' ? 'You are now an administrator' : 'Your administrator access was removed',
-    message:
-      role === 'admin'
-        ? 'You have been granted administrator access. You can now open the admin dashboard after signing in.'
-        : 'Your administrator access has been removed. Your listener account is unchanged.',
-    withLoginLink: role === 'admin',
+    heading: { admin: 'You are now an administrator', artist: 'You now have artist access', user: 'Your role was changed' }[role],
+    message: {
+      admin: 'You have been granted administrator access. You can now open the admin dashboard after signing in.',
+      artist: 'You can now use SHERE MUSIC STUDIO to upload music, lyrics and videos.',
+      user: 'Your account is now a listener account. Your library is unchanged.',
+    }[role],
+    withLoginLink: role !== 'user',
   });
-  ok(res, toUser(updated), { message: role === 'admin' ? 'User promoted to administrator.' : 'Administrator role removed.' });
+  ok(res, toUser(updated), { message: { admin: 'User promoted to administrator.', artist: 'User is now an artist.', user: 'User is now a listener.' }[role] });
 }

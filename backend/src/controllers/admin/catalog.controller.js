@@ -4,6 +4,7 @@ import { dbError, one, unwrap } from '../../utils/db.js';
 import { created, noContent, ok, pageMeta, pageRange } from '../../utils/http.js';
 import { cleanSearchTerm, ilikeAny, slugify } from '../../utils/search.js';
 import { toAlbum, toArtist, toGenre, toPlaylist } from '../../services/mappers.js';
+import { notifyUsers } from '../../services/notification.service.js';
 import { FOLDERS, removeMedia, withUploadCleanup } from '../../services/storage.service.js';
 import { getSettings, uploadLimits } from '../../services/settings.service.js';
 import { PLAYLIST_FIELDS } from '../catalog.controller.js';
@@ -14,15 +15,34 @@ const imageLimit = async () => uploadLimits(await getSettings()).imageMb;
 const loadArtist = (id) => one(supabase.from('artists_view').select('*').eq('id', id), 'Artist not found.');
 
 export async function listArtists(req, res) {
-  const { q, sort, page, limit } = req.valid.query;
+  const { q, sort, page, limit, verification } = req.valid.query;
   let query = supabase.from('artists_view').select('*', { count: 'exact' });
   const term = cleanSearchTerm(q);
   if (term) query = query.ilike('name', `%${term}%`);
+  if (verification) query = query.eq('verification_status', verification);
   query = sort === 'popular' ? query.order('total_plays', { ascending: false }) : sort === 'latest' ? query.order('created_at', { ascending: false }) : query.order('name');
   const { from, to } = pageRange({ page, limit });
   const { data, count, error } = await query.order('id').range(from, to);
   if (error) throw dbError(error);
-  ok(res, data.map(toArtist), pageMeta({ page, limit }, count));
+  const ownerIds = [...new Set(data.map((a) => a.owner_user_id).filter(Boolean))];
+  const owners = ownerIds.length ? unwrap(await supabase.from('users').select('id,name,email').in('id', ownerIds)) : [];
+  const ownerMap = new Map(owners.map((o) => [o.id, o]));
+  ok(
+    res,
+    data.map((a) => ({ ...toArtist(a, { manage: true }), owner: a.owner_user_id ? ownerMap.get(a.owner_user_id) || null : null })),
+    pageMeta({ page, limit }, count)
+  );
+}
+
+/** Resolve an owner email from the admin form to a user id (null clears ownership). */
+async function ownerIdFor(ownerEmail) {
+  if (ownerEmail === undefined) return undefined;
+  if (ownerEmail === null) return null;
+  const user = unwrap(await supabase.from('users').select('id,role').eq('email', ownerEmail).maybeSingle());
+  if (!user) throw badRequest(`No account uses ${ownerEmail}.`, [{ field: 'ownerEmail', message: 'No account with this email.' }]);
+  // Owning an artist profile makes a listener an artist.
+  if (user.role === 'user') unwrap(await supabase.from('users').update({ role: 'artist' }).eq('id', user.id));
+  return user.id;
 }
 
 /** Lightweight id/name lists for form dropdowns. */
@@ -31,42 +51,93 @@ export async function artistOptions(req, res) {
 }
 
 export async function createArtist(req, res) {
-  const { name, bio } = req.valid.body;
+  const { name, bio, location, socialLinks, ownerEmail } = req.valid.body;
   const limit = await imageLimit();
+  const owner_user_id = await ownerIdFor(ownerEmail);
   const id = await withUploadCleanup(async (upload) => {
-    const image_path = req.file ? await upload.image(req.file, FOLDERS.artists, limit) : null;
-    const { data, error } = await supabase.from('artists').insert({ name, bio: bio ?? null, image_path }).select('id').single();
+    const image = req.files?.image?.[0];
+    const cover = req.files?.cover?.[0];
+    const image_path = image ? await upload.image(image, FOLDERS.artists, limit) : null;
+    const cover_path = cover ? await upload.image(cover, FOLDERS.covers, limit) : null;
+    const { data, error } = await supabase
+      .from('artists')
+      .insert({ name, bio: bio ?? null, location: location ?? null, social_links: socialLinks || {}, image_path, cover_path, owner_user_id: owner_user_id ?? null })
+      .select('id')
+      .single();
     if (error?.code === '23505') throw conflict(`An artist named "${name}" already exists.`);
     if (error) throw dbError(error);
     return data.id;
   });
-  created(res, toArtist(await loadArtist(id)));
+  created(res, toArtist(await loadArtist(id), { manage: true }));
 }
 
 export async function updateArtist(req, res) {
   const existing = await loadArtist(req.valid.params.id);
-  const { name, bio, removeImage } = req.valid.body;
+  const { name, bio, location, socialLinks, removeImage, removeCover, ownerEmail } = req.valid.body;
   const limit = await imageLimit();
-  const patch = { name, ...(bio !== undefined ? { bio } : {}) };
+  const patch = { name, ...(bio !== undefined ? { bio } : {}), ...(location !== undefined ? { location } : {}) };
+  if (socialLinks !== undefined) patch.social_links = Object.fromEntries(Object.entries(socialLinks).filter(([, v]) => v));
+  const owner = await ownerIdFor(ownerEmail);
+  if (owner !== undefined) patch.owner_user_id = owner;
   await withUploadCleanup(async (upload) => {
-    if (req.file) patch.image_path = await upload.image(req.file, FOLDERS.artists, limit);
+    const image = req.files?.image?.[0];
+    const cover = req.files?.cover?.[0];
+    if (image) patch.image_path = await upload.image(image, FOLDERS.artists, limit);
     else if (removeImage) patch.image_path = null;
+    if (cover) patch.cover_path = await upload.image(cover, FOLDERS.covers, limit);
+    else if (removeCover) patch.cover_path = null;
     const { error } = await supabase.from('artists').update(patch).eq('id', existing.id);
     if (error?.code === '23505') throw conflict(`An artist named "${name}" already exists.`);
     if (error) throw dbError(error);
   });
   if (patch.image_path !== undefined) await removeMedia(existing.image_path);
-  ok(res, toArtist(await loadArtist(existing.id)));
+  if (patch.cover_path !== undefined) await removeMedia(existing.cover_path);
+  ok(res, toArtist(await loadArtist(existing.id), { manage: true }));
 }
 
 export async function deleteArtist(req, res) {
   const existing = await loadArtist(req.valid.params.id);
-  if (Number(existing.total_song_count) > 0 || Number(existing.album_count) > 0) {
-    throw conflict(`Remove or reassign this artist's ${existing.total_song_count} song(s) and ${existing.album_count} album(s) before deleting.`, 'IN_USE');
+  const videos = Number(existing.video_count || 0);
+  const { count: allVideos } = await supabase.from('music_videos').select('id', { count: 'exact', head: true }).eq('artist_id', existing.id);
+  if (Number(existing.total_song_count) > 0 || Number(existing.album_count) > 0 || (allVideos ?? videos) > 0) {
+    throw conflict(
+      `Remove or reassign this artist's ${existing.total_song_count} song(s), ${existing.album_count} album(s) and ${allVideos ?? videos} video(s) before deleting.`,
+      'IN_USE'
+    );
   }
   unwrap(await supabase.from('artists').delete().eq('id', existing.id));
-  await removeMedia(existing.image_path);
+  await removeMedia(existing.image_path, existing.cover_path);
   noContent(res);
+}
+
+/** Verify, reject a request, or remove verification. The owner is notified. */
+export async function decideVerification(req, res) {
+  const existing = await loadArtist(req.valid.params.id);
+  const { decision, note } = req.valid.body;
+  const patch =
+    decision === 'verify'
+      ? { verification_status: 'verified', verified_at: new Date().toISOString(), verification_note: note || null }
+      : decision === 'reject'
+        ? { verification_status: 'rejected', verification_note: note || 'Your request was not approved.' }
+        : { verification_status: 'none', verified_at: null, verification_note: note || null };
+  unwrap(await supabase.from('artists').update(patch).eq('id', existing.id));
+  if (existing.owner_user_id) {
+    notifyUsers([existing.owner_user_id], {
+      type: `verification_${decision}`,
+      prefKey: 'account',
+      title:
+        decision === 'verify'
+          ? `${existing.name} is now verified`
+          : decision === 'reject'
+            ? `Verification for ${existing.name} was not approved`
+            : `Verification was removed from ${existing.name}`,
+      body: patch.verification_note,
+      link: '/studio/profile',
+    });
+  }
+  ok(res, toArtist(await loadArtist(existing.id), { manage: true }), {
+    message: { verify: 'Artist verified.', reject: 'Verification request rejected.', revoke: 'Verification removed.' }[decision],
+  });
 }
 
 // ─── Albums ────────────────────────────────────────────────────────────────

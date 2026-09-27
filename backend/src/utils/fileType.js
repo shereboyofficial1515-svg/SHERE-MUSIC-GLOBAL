@@ -50,3 +50,41 @@ export function hasAudioExtension(name) {
 export function hasImageExtension(name) {
   return IMAGE_EXTENSIONS.has(extensionOf(name));
 }
+
+// ─── Video ─────────────────────────────────────────────────────────────────
+export const VIDEO_TYPES = {
+  mp4: { mime: 'video/mp4', ext: 'mp4' },
+  webm: { mime: 'video/webm', ext: 'webm' },
+  mov: { mime: 'video/quicktime', ext: 'mov' },
+};
+const VIDEO_EXT_TYPES = { mp4: VIDEO_TYPES.mp4, m4v: VIDEO_TYPES.mp4, webm: VIDEO_TYPES.webm, mov: VIDEO_TYPES.mov };
+
+/** Expected video type from the filename, used before the bytes are available (direct uploads). */
+export function videoTypeFromName(name) {
+  return VIDEO_EXT_TYPES[extensionOf(name)] || null;
+}
+
+export function detectVideo(buffer) {
+  if (!buffer || buffer.length < 12) return null;
+  if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) return VIDEO_TYPES.webm;
+  if (ascii(buffer, 4, 8) === 'ftyp') return ascii(buffer, 8, 10) === 'qt' ? VIDEO_TYPES.mov : VIDEO_TYPES.mp4;
+  return null;
+}
+
+// ─── Subtitles ─────────────────────────────────────────────────────────────
+const SRT_TIME = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
+
+/**
+ * Normalise an uploaded subtitle file to WebVTT. Accepts WebVTT as-is and
+ * converts SubRip (.srt). Returns null when the text is neither.
+ */
+export function toWebVtt(buffer, name) {
+  let text = buffer.toString('utf8').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  if (text.includes('\0')) return null; // binary file
+  if (/^WEBVTT( |\t|\n|$)/.test(text)) return text;
+  if (extensionOf(name) === 'srt' && /\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/.test(text)) {
+    text = text.replace(SRT_TIME, '$1.$2');
+    return `WEBVTT\n\n${text.trim()}\n`;
+  }
+  return null;
+}

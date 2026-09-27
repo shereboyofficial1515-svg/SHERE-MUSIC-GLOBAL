@@ -10,4 +10,7 @@ export const authService = {
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (body) => api.post('/auth/reset-password', body),
   changePassword: (body) => api.post('/auth/change-password', body),
+  confirmEmail: (token) => api.post('/auth/confirm-email', { token }),
+  oauthSignIn: (provider, accessToken) => api.post(`/auth/oauth/${provider}`, { accessToken }),
+  oauthLink: (provider, accessToken) => api.post(`/auth/oauth/${provider}/link`, { accessToken }),
 };

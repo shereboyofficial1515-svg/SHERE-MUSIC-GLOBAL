@@ -44,7 +44,8 @@ export default function UserDetailPage() {
     'status:disabled': { title: 'Disable account?', message: `${user.name} will be signed out everywhere and will not be able to sign in until re-enabled. They will be notified by email.`, label: 'Disable account', danger: true },
     'status:active': { title: 'Enable account?', message: `${user.name} will be able to sign in again.`, label: 'Enable account' },
     'role:admin': { title: 'Make administrator?', message: `${user.name} will get full access to the admin dashboard, including uploads, users and settings.`, label: 'Make administrator' },
-    'role:user': { title: 'Remove administrator role?', message: `${user.name} will lose access to the admin dashboard.`, label: 'Remove admin role', danger: true },
+    'role:user': { title: 'Make this a listener account?', message: `${user.name} will lose ${user.role === 'admin' ? 'admin dashboard' : 'Studio'} access.`, label: 'Make listener', danger: true },
+    'role:artist': { title: 'Give artist access?', message: `${user.name} will be able to use SHERE MUSIC STUDIO to manage their own artist profiles and uploads.`, label: 'Make artist' },
   };
   const dialog = confirm ? dialogs[`${confirm.kind}:${confirm.value}`] : null;
 
@@ -82,15 +83,21 @@ export default function UserDetailPage() {
                   <Icon name="check" size={16} /> Enable account
                 </button>
               )}
-              {user.role === 'admin' ? (
-                <button type="button" className="btn btn--secondary" onClick={() => setConfirm({ kind: 'role', value: 'user' })}>
-                  Remove admin role
-                </button>
-              ) : (
+              {user.role !== 'admin' ? (
                 <button type="button" className="btn btn--secondary" onClick={() => setConfirm({ kind: 'role', value: 'admin' })} disabled={!user.emailVerified} title={!user.emailVerified ? 'The user must verify their email first' : undefined}>
                   <Icon name="shield" size={16} /> Make administrator
                 </button>
-              )}
+              ) : null}
+              {user.role !== 'artist' ? (
+                <button type="button" className="btn btn--secondary" onClick={() => setConfirm({ kind: 'role', value: 'artist' })}>
+                  <Icon name="mic" size={16} /> {user.role === 'admin' ? 'Change to artist' : 'Make artist'}
+                </button>
+              ) : null}
+              {user.role !== 'user' ? (
+                <button type="button" className="btn btn--ghost" onClick={() => setConfirm({ kind: 'role', value: 'user' })}>
+                  Make listener
+                </button>
+              ) : null}
             </div>
           )}
         </section>

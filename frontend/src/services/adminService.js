@@ -1,36 +1,33 @@
 import { api, apiUrl, uploadWithProgress } from './api.js';
+import { createContentService, toFormData } from './contentService.js';
 
-/** Build FormData from a plain object, skipping undefined values. */
-export function toFormData(fields, files = {}) {
-  const form = new FormData();
-  for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined) continue;
-    form.append(key, value === null ? '' : String(value));
-  }
-  for (const [key, file] of Object.entries(files)) if (file) form.append(key, file);
-  return form;
-}
+export { toFormData };
 
 export const adminService = {
+  ...createContentService('/admin'),
+
   overview: () => api.get('/admin/overview'),
   analytics: (days) => api.get('/admin/analytics', { query: { days } }),
   downloads: (query) => api.get('/admin/downloads', { query }),
   reportUrl: (type, days) => apiUrl(`/admin/reports/${type}`, { days }),
+  reviews: (type = 'all') => api.get('/admin/reviews', { query: { type } }),
 
-  songs: (query, options) => api.get('/admin/songs', { query, ...options }),
-  song: (id) => api.get(`/admin/songs/${id}`),
-  songPreview: (id) => api.get(`/admin/songs/${id}/preview`),
-  /** Returns { promise, abort } so the upload form can show progress and cancel. */
-  createSong: (form, onProgress) => uploadWithProgress('POST', '/admin/songs', form, { onProgress }),
-  updateSong: (id, form, onProgress) => uploadWithProgress('PATCH', `/admin/songs/${id}`, form, { onProgress }),
   publishSong: (id, isPublished) => api.patch(`/admin/songs/${id}/publish`, { isPublished }),
   featureSong: (id, isFeatured) => api.patch(`/admin/songs/${id}/feature`, { isFeatured }),
-  deleteSong: (id) => api.delete(`/admin/songs/${id}`),
+  reviewSong: (id, decision, reason) => api.post(`/admin/songs/${id}/review`, { decision, reason }),
+
+  lyricsList: (query) => api.get('/admin/lyrics', { query }),
+  reviewLyrics: (songId, lyricsId, decision, reason) => api.post(`/admin/songs/${songId}/lyrics/${lyricsId}/review`, { decision, reason }),
+  setLyricsVisibility: (songId, lyricsId, isVisible) => api.patch(`/admin/songs/${songId}/lyrics/${lyricsId}/visibility`, { isVisible }),
+
+  reviewVideo: (id, decision, reason) => api.post(`/admin/videos/${id}/review`, { decision, reason }),
+  featureVideo: (id, isFeatured) => api.patch(`/admin/videos/${id}/feature`, { isFeatured }),
 
   artists: (query, options) => api.get('/admin/artists', { query, ...options }),
   artistOptions: () => api.get('/admin/artists/options'),
   saveArtist: (id, form) => uploadWithProgress(id ? 'PATCH' : 'POST', id ? `/admin/artists/${id}` : '/admin/artists', form).promise,
   deleteArtist: (id) => api.delete(`/admin/artists/${id}`),
+  decideVerification: (id, decision, note) => api.post(`/admin/artists/${id}/verification`, { decision, note }),
 
   albums: (query, options) => api.get('/admin/albums', { query, ...options }),
   albumOptions: () => api.get('/admin/albums/options'),

@@ -12,6 +12,8 @@ import { usePlayer } from '../../context/PlayerContext.jsx';
 import { useLibrary } from '../../context/LibraryContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { formatCount, formatDate, formatDuration } from '../../utils/format.js';
+import LyricsCard from '../../components/lyrics/LyricsCard.jsx';
+import { VerifiedBadge } from '../../components/artists/FollowButton.jsx';
 
 export default function SongPage() {
   const { id } = useParams();
@@ -74,7 +76,7 @@ export default function SongPage() {
             <>
               <h1 className="detail__title">{song.title}</h1>
               <p className="detail__artist">
-                <Link to={`/artists/${song.artist.id}`}>{song.artist.name}</Link>
+                <Link to={`/artists/${song.artist.id}`}>{song.artist.name}</Link> {song.artist.verified ? <VerifiedBadge size={16} /> : null}
               </p>
               <dl className="meta-list">
                 {song.album ? (
@@ -131,6 +133,8 @@ export default function SongPage() {
           )}
         </div>
       </article>
+
+      {song ? <LyricsCard song={song} list={[song, ...relatedSongs]} /> : null}
 
       <Section title="Related music" subtitle="More from this artist and genre">
         {related.loading ? (

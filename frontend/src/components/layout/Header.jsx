@@ -3,20 +3,56 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import Icon from '../ui/Icon.jsx';
 import Logo from '../ui/Logo.jsx';
 import Artwork from '../ui/Artwork.jsx';
+import NotificationsBell from './NotificationsBell.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
+import { usePreferences } from '../../context/PreferencesContext.jsx';
+import { useSettings } from '../../context/SettingsContext.jsx';
 import { useDismiss } from '../../hooks/useDismiss.js';
 import { useScrollLock } from '../../hooks/useScrollLock.js';
+import { gsap, motionOK } from '../../utils/motion.js';
 import { cx } from '../../utils/format.js';
 
-export const NAV_LINKS = [
-  { to: '/', label: 'Home', icon: 'home', end: true },
-  { to: '/discover', label: 'Discover', icon: 'compass' },
-  { to: '/artists', label: 'Artists', icon: 'mic' },
-  { to: '/albums', label: 'Albums', icon: 'disc' },
-  { to: '/playlists', label: 'Playlists', icon: 'list-music' },
-  { to: '/favorites', label: 'Favorites', icon: 'heart' },
-];
+/** Primary destinations, shared by the sidebar and drawer. */
+export function useNavGroups() {
+  const { user, isAdmin } = useAuth();
+  const { settings } = useSettings();
+  const isCreator = user && ['artist', 'admin'].includes(user.role);
+  return [
+    {
+      label: 'Browse',
+      links: [
+        { to: '/', label: 'Home', icon: 'home', end: true },
+        { to: '/discover', label: 'Discover', icon: 'compass' },
+        { to: '/search', label: 'Search', icon: 'search' },
+        ...(settings.videosEnabled !== false ? [{ to: '/videos', label: 'Music Videos', icon: 'film' }] : []),
+        { to: '/artists', label: 'Artists', icon: 'mic' },
+        { to: '/albums', label: 'Albums', icon: 'disc' },
+      ],
+    },
+    {
+      label: 'Your library',
+      links: [
+        { to: '/favorites', label: 'Favorites', icon: 'heart' },
+        { to: '/playlists', label: 'Playlists', icon: 'list-music' },
+        { to: '/following', label: 'Following', icon: 'user-check' },
+        { to: '/library', label: 'History', icon: 'clock' },
+      ],
+    },
+    ...(user
+      ? [
+          {
+            label: 'Create & manage',
+            links: [
+              { to: '/studio', label: isCreator ? 'SHERE MUSIC STUDIO' : 'Become an artist', icon: 'layers' },
+              ...(isAdmin ? [{ to: '/admin', label: 'Admin dashboard', icon: 'shield' }] : []),
+              { to: '/settings', label: 'Settings', icon: 'settings' },
+            ],
+          },
+        ]
+      : []),
+  ];
+}
 
 /** Animated hamburger ↔ X (three CSS bars). */
 export function MenuToggle({ open, onClick, controls }) {
@@ -39,7 +75,6 @@ function SearchBox({ autoFocus = false, onSubmitted }) {
     if (location.pathname !== '/search') setValue('');
   }, [location.pathname]);
 
-  // Live search: update the results page as the user types (debounced on that page).
   const onChange = (e) => {
     const q = e.target.value;
     setValue(q);
@@ -62,7 +97,7 @@ function SearchBox({ autoFocus = false, onSubmitted }) {
       <input
         type="search"
         className="search-box__input"
-        placeholder="Search songs, artists, albums, genres"
+        placeholder="Songs, artists, lyrics, videos…"
         value={value}
         onChange={onChange}
         aria-label="Search music"
@@ -71,6 +106,26 @@ function SearchBox({ autoFocus = false, onSubmitted }) {
         maxLength={100}
       />
     </form>
+  );
+}
+
+const THEME_ORDER = ['dark', 'light', 'system'];
+const THEME_META = { dark: { icon: 'moon', label: 'Dark' }, light: { icon: 'sun', label: 'Light' }, system: { icon: 'monitor', label: 'System' } };
+
+export function ThemeToggle() {
+  const { prefs, update } = usePreferences();
+  const current = prefs.theme || 'system';
+  const nextTheme = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
+  return (
+    <button
+      type="button"
+      className="icon-btn"
+      onClick={() => update({ theme: nextTheme }).catch(() => {})}
+      aria-label={`Theme: ${THEME_META[current].label}. Switch to ${THEME_META[nextTheme].label}.`}
+      title={`Theme: ${THEME_META[current].label}`}
+    >
+      <Icon name={THEME_META[current].icon} size={19} />
+    </button>
   );
 }
 
@@ -90,11 +145,18 @@ function UserMenu() {
     navigate('/');
   };
 
+  const items = [
+    { to: user.username ? `/u/${user.username}` : `/u/${user.id}`, icon: 'user', label: 'Your profile' },
+    { to: '/library', icon: 'clock', label: 'Listening history' },
+    { to: '/studio', icon: 'layers', label: ['artist', 'admin'].includes(user.role) ? 'SHERE MUSIC STUDIO' : 'Become an artist' },
+    { to: '/settings', icon: 'settings', label: 'Settings' },
+    ...(isAdmin ? [{ to: '/admin', icon: 'shield', label: 'Admin dashboard' }] : []),
+  ];
+
   return (
     <div className="menu" ref={ref}>
       <button type="button" className="avatar-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Account menu">
-        <Artwork src={user.avatarUrl} alt="" size={34} rounded icon="user" />
-        <Icon name="chevron-down" size={16} className="hide-sm" />
+        <Artwork src={user.avatarUrl} alt="" size={32} rounded icon="user" />
       </button>
       {open ? (
         <div className="menu__list menu__list--right" role="menu">
@@ -102,14 +164,8 @@ function UserMenu() {
             <strong>{user.name}</strong>
             <span className="text-muted text-sm">{user.email}</span>
           </div>
-          {[
-            { to: '/profile', icon: 'user', label: 'Profile' },
-            { to: '/favorites', icon: 'heart', label: 'Favorites' },
-            { to: '/playlists', icon: 'list-music', label: 'Playlists' },
-            { to: '/account', icon: 'settings', label: 'Account settings' },
-            ...(isAdmin ? [{ to: '/admin', icon: 'shield', label: 'Admin dashboard' }] : []),
-          ].map((item) => (
-            <Link key={item.to} to={item.to} role="menuitem" className="menu__item" onClick={close}>
+          {items.map((item) => (
+            <Link key={item.label} to={item.to} role="menuitem" className="menu__item" onClick={close}>
               <Icon name={item.icon} size={16} />
               {item.label}
             </Link>
@@ -124,120 +180,67 @@ function UserMenu() {
   );
 }
 
-export default function Header() {
-  const { user, isAdmin, loading, logout } = useAuth();
+/** Mobile/tablet drawer with the full navigation, animated with GSAP. */
+function Drawer({ open, onClose }) {
+  const groups = useNavGroups();
+  const { user, logout } = useAuth();
   const toast = useToast();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const location = useLocation();
+  const ref = useRef(null);
+  useScrollLock(open);
 
   useEffect(() => {
-    setMenuOpen(false);
-    setSearchOpen(false);
-  }, [location.pathname]);
-
-  useScrollLock(menuOpen);
+    const el = ref.current;
+    if (!el) return;
+    const animate = motionOK();
+    if (open) {
+      gsap.set(el, { visibility: 'visible' });
+      gsap.to(el, { x: '0%', duration: animate ? 0.35 : 0, ease: 'power3.out', overwrite: true });
+      if (animate) gsap.fromTo(el.querySelectorAll('.side-link'), { x: -12, autoAlpha: 0 }, { x: 0, autoAlpha: 1, stagger: 0.025, duration: 0.3, delay: 0.08 });
+    } else {
+      gsap.to(el, { x: '-100%', duration: animate ? 0.28 : 0, ease: 'power2.in', overwrite: true, onComplete: () => gsap.set(el, { visibility: 'hidden' }) });
+    }
+  }, [open]);
 
   useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onKey = (e) => e.key === 'Escape' && setMenuOpen(false);
+    if (!open) return undefined;
+    const onKey = (e) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [menuOpen]);
+  }, [open, onClose]);
 
-  // The drawer is rendered outside <header>: the header's backdrop-filter would
-  // otherwise become the containing block for the fixed-position drawer.
   return (
     <>
-    <header className="header">
-      <div className="header__inner container">
-        <div className="header__left">
-          <span className="header__toggle">
-            <MenuToggle open={menuOpen} onClick={() => setMenuOpen((o) => !o)} controls="mobile-nav" />
-          </span>
-          <Logo />
-        </div>
-
-        <nav className="header__nav" aria-label="Main">
-          {NAV_LINKS.map((link) => (
-            <NavLink key={link.to} to={link.to} end={link.end} className={({ isActive }) => cx('nav-link', isActive && 'nav-link--active')}>
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="header__search hide-sm">
-          <SearchBox />
-        </div>
-
-        <div className="header__right">
-          <button type="button" className="icon-btn show-sm" onClick={() => setSearchOpen((o) => !o)} aria-label={searchOpen ? 'Close search' : 'Search'} aria-expanded={searchOpen}>
-            <Icon name={searchOpen ? 'x' : 'search'} size={20} />
-          </button>
-          {loading ? null : user ? (
-            <UserMenu />
-          ) : (
-            <div className="row-gap hide-xs">
-              <Link to="/login" className="btn btn--ghost btn--sm">
-                Sign in
-              </Link>
-              <Link to="/register" className="btn btn--primary btn--sm">
-                Sign up
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {searchOpen ? (
-        <div className="header__mobile-search show-sm container">
-          <SearchBox autoFocus onSubmitted={() => setSearchOpen(false)} />
-        </div>
-      ) : null}
-    </header>
-
-      <div className={cx('drawer-backdrop', menuOpen && 'is-open')} onClick={() => setMenuOpen(false)} aria-hidden="true" />
-      <nav id="mobile-nav" className={cx('drawer', menuOpen && 'is-open')} aria-label="Mobile">
-        <ul className="drawer__list">
-          {NAV_LINKS.map((link) => (
-            <li key={link.to}>
-              <NavLink to={link.to} end={link.end} className={({ isActive }) => cx('drawer__link', isActive && 'drawer__link--active')}>
-                <Icon name={link.icon} size={20} />
+      <div className={cx('drawer-backdrop', open && 'is-open')} onClick={onClose} aria-hidden="true" />
+      <nav id="mobile-nav" ref={ref} className="drawer" aria-label="Menu">
+        {groups.map((group) => (
+          <div key={group.label} className="sidebar__group">
+            <p className="sidebar__label">{group.label}</p>
+            {group.links.map((link) => (
+              <NavLink key={link.to} to={link.to} end={link.end} className={({ isActive }) => cx('side-link', isActive && 'side-link--active')}>
+                <Icon name={link.icon} size={19} />
                 {link.label}
               </NavLink>
-            </li>
-          ))}
-        </ul>
-        <div className="drawer__footer">
+            ))}
+          </div>
+        ))}
+        <div className="sidebar__group" style={{ marginTop: 'auto', paddingTop: 12 }}>
           {user ? (
-            <>
-              <Link to="/profile" className="drawer__link">
-                <Icon name="user" size={20} /> Profile
-              </Link>
-              <Link to="/account" className="drawer__link">
-                <Icon name="settings" size={20} /> Account settings
-              </Link>
-              {isAdmin ? (
-                <Link to="/admin" className="drawer__link">
-                  <Icon name="shield" size={20} /> Admin dashboard
-                </Link>
-              ) : null}
-              <button
-                type="button"
-                className="drawer__link"
-                onClick={async () => {
-                  await logout();
-                  setMenuOpen(false);
-                  toast.success('You have been signed out.');
-                }}
-              >
-                <Icon name="log-out" size={20} /> Sign out
-              </button>
-            </>
+            <button
+              type="button"
+              className="side-link"
+              style={{ border: 0, background: 'none', width: '100%' }}
+              onClick={async () => {
+                await logout();
+                onClose();
+                toast.success('You have been signed out.');
+              }}
+            >
+              <Icon name="log-out" size={19} /> Sign out
+            </button>
           ) : (
             <div className="stack-sm">
               <Link to="/login" className="btn btn--secondary btn--block">
-                Sign in
+                Log in
               </Link>
               <Link to="/register" className="btn btn--primary btn--block">
                 Create account
@@ -246,6 +249,66 @@ export default function Header() {
           )}
         </div>
       </nav>
+    </>
+  );
+}
+
+export default function Header() {
+  const { user, loading } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const location = useLocation();
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+  }, [location.pathname]);
+
+  return (
+    <>
+      <header className="topbar">
+        <div className="topbar__inner container">
+          <div className="topbar__left">
+            <span className="header__toggle">
+              <MenuToggle open={menuOpen} onClick={() => setMenuOpen((o) => !o)} controls="mobile-nav" />
+            </span>
+            <span className="topbar__logo">
+              <Logo />
+            </span>
+          </div>
+          <div className="topbar__search">
+            <SearchBox />
+          </div>
+          <div className="topbar__right">
+            <button type="button" className="icon-btn show-sm" onClick={() => setSearchOpen((o) => !o)} aria-label={searchOpen ? 'Close search' : 'Search'} aria-expanded={searchOpen}>
+              <Icon name={searchOpen ? 'x' : 'search'} size={20} />
+            </button>
+            <ThemeToggle />
+            {loading ? null : user ? (
+              <>
+                <NotificationsBell />
+                <UserMenu />
+              </>
+            ) : (
+              <div className="row-gap" style={{ gap: 6 }}>
+                <Link to="/login" className="btn btn--ghost btn--sm hide-xs">
+                  Log in
+                </Link>
+                <Link to="/register" className="btn btn--primary btn--sm">
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+        {searchOpen ? (
+          <div className="topbar__mobile-search container">
+            <SearchBox autoFocus onSubmitted={() => setSearchOpen(false)} />
+          </div>
+        ) : null}
+      </header>
+      <Drawer open={menuOpen} onClose={closeMenu} />
     </>
   );
 }

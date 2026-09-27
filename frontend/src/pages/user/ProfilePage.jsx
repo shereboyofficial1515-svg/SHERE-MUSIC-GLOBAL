@@ -29,7 +29,7 @@ function RecentTab() {
   return <SongList songs={data} label="Recently played songs" />;
 }
 
-function DownloadsTab() {
+export function DownloadsTab() {
   const fetchPage = useCallback((page) => userService.downloads({ page, limit: 30 }), []);
   const list = usePaginatedList(fetchPage, []);
   if (list.error && !list.items.length) return <ErrorState error={list.error} onRetry={list.reset} />;
@@ -74,7 +74,7 @@ function PlaylistsTab() {
 }
 
 export default function ProfilePage() {
-  useMeta({ title: 'Your profile', noindex: true });
+  useMeta({ title: 'Your library', noindex: true });
   const { user } = useAuth();
   const { data: profile, loading, error, reload } = useAsync(() => userService.profile(), []);
   const [tab, setTab] = useState('recent');
@@ -86,14 +86,19 @@ export default function ProfilePage() {
       <header className="profile-head">
         <Artwork src={user.avatarUrl} alt={`${user.name} profile picture`} rounded size={112} icon="user" className="profile-head__avatar" />
         <div className="profile-head__info">
-          <p className="eyebrow">Profile</p>
+          <p className="eyebrow">Your library</p>
           <h1 className="page-title">{user.name}</h1>
           <p className="text-muted">
             {user.email} · Member since {formatDate(user.createdAt, { year: 'numeric', month: 'long' })}
           </p>
-          <Link to="/account" className="btn btn--secondary btn--sm">
-            <Icon name="settings" size={16} /> Account settings
-          </Link>
+          <div className="row-gap wrap">
+            <Link to={`/u/${user.username || user.id}`} className="btn btn--secondary btn--sm">
+              <Icon name="user" size={16} /> Public profile
+            </Link>
+            <Link to="/settings/profile" className="btn btn--ghost btn--sm">
+              <Icon name="settings" size={16} /> Edit profile
+            </Link>
+          </div>
         </div>
       </header>
 

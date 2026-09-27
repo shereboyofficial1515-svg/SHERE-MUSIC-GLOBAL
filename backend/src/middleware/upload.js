@@ -19,3 +19,15 @@ export const songFiles = multer({
 
 export const singleImage = (field) =>
   multer({ storage, limits: { fileSize: env.uploads.maxImageMb * MB, files: 1, fields: 40 } }).single(field);
+
+/** Artist forms: profile image and header cover. */
+export const artistImages = multer({
+  storage,
+  limits: { fileSize: env.uploads.maxImageMb * MB, files: 2, fields: 40 },
+}).fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'cover', maxCount: 1 },
+]);
+
+/** Subtitle files are small text files. */
+export const subtitleFile = multer({ storage, limits: { fileSize: 2 * MB, files: 1, fields: 10 } }).single('file');

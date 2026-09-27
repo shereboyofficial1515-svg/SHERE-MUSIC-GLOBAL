@@ -24,12 +24,13 @@ function setCanonical(href) {
 }
 
 /** Per-page SEO: title, description, canonical URL and Open Graph / Twitter tags. */
-export function useMeta({ title, description, image, type = 'website', noindex = false } = {}) {
+export function useMeta({ title, description, image, type = 'website', noindex = false, skip = false } = {}) {
   const { settings } = useSettings();
   const siteName = settings?.siteName || 'SHERE MUSIC';
   const desc = description || settings?.siteDescription || 'Discover music. Stream music. Download music.';
 
   useEffect(() => {
+    if (skip) return; // embedded views let their host page own the metadata
     const fullTitle = title ? `${title} | ${siteName}` : `${siteName} — Discover, stream and download music`;
     document.title = fullTitle;
     const url = `${SITE_URL}${window.location.pathname}`;
@@ -46,5 +47,5 @@ export function useMeta({ title, description, image, type = 'website', noindex =
     setMeta('name', 'twitter:description', desc);
     setMeta('name', 'twitter:image', img);
     setCanonical(url);
-  }, [title, desc, image, type, noindex, siteName]);
+  }, [title, desc, image, type, noindex, siteName, skip]);
 }

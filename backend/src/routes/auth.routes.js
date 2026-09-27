@@ -11,6 +11,7 @@ import {
   resetPasswordSchema,
   tokenSchema,
 } from '../validators/auth.validators.js';
+import { oauthTokenSchema, providerParam } from '../validators/me.validators.js';
 
 const router = Router();
 
@@ -23,5 +24,8 @@ router.post('/resend-verification', emailLimiter, validate(emailOnlySchema), aut
 router.post('/forgot-password', emailLimiter, validate(emailOnlySchema), auth.forgotPassword);
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), auth.resetPassword);
 router.post('/change-password', requireAuth, authLimiter, validate(changePasswordSchema), auth.changePassword);
+router.post('/confirm-email', authLimiter, validate(tokenSchema), auth.confirmEmailChange);
+router.post('/oauth/:provider', authLimiter, validate(providerParam, 'params'), validate(oauthTokenSchema), auth.oauthSignIn);
+router.post('/oauth/:provider/link', requireAuth, authLimiter, validate(providerParam, 'params'), validate(oauthTokenSchema), auth.oauthLink);
 
 export default router;

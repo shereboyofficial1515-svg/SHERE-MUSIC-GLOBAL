@@ -4,6 +4,7 @@ import Artwork from '../ui/Artwork.jsx';
 import { DownloadButton, NowPlayingBars, PlayButton, SongMenu } from './SongActions.jsx';
 import { usePlayer } from '../../context/PlayerContext.jsx';
 import { cx, formatDuration } from '../../utils/format.js';
+import { VerifiedBadge } from '../artists/FollowButton.jsx';
 
 /**
  * Grid card: artwork, title, artist, genre, duration, play/download/more.
@@ -27,6 +28,7 @@ function SongCard({ song, list }) {
         </h3>
         <p className="song-card__artist">
           <Link to={`/artists/${song.artist.id}`}>{song.artist.name}</Link>
+          {song.artist.verified ? <VerifiedBadge size={13} /> : null}
         </p>
         <div className="song-card__meta">
           <span>{song.genre?.name || 'Music'}</span>

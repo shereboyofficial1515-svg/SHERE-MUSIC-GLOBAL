@@ -241,6 +241,109 @@ const PATHS = {
     </>
   ),
   filter: <path d="M22 3H2l8 9.46V19l4 2v-8.54z" />,
+  shuffle: <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />,
+  repeat: <path d="m17 1 4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" />,
+  lyrics: (
+    <>
+      <path d="M4 6h10M4 10h14M4 14h8" />
+      <path d="M17 13v6.5a1.5 1.5 0 1 1-1.5-1.5H17" />
+    </>
+  ),
+  quote: <path d="M3 21c3 0 7-1 7-8V5H3v7h4c0 4-2 6-4 6zM14 21c3 0 7-1 7-8V5h-7v7h4c0 4-2 6-4 6z" />,
+  minimize: <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />,
+  grip: (
+    <>
+      <circle cx="9" cy="6" r="1.2" fill="currentColor" />
+      <circle cx="15" cy="6" r="1.2" fill="currentColor" />
+      <circle cx="9" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="15" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="9" cy="18" r="1.2" fill="currentColor" />
+      <circle cx="15" cy="18" r="1.2" fill="currentColor" />
+    </>
+  ),
+  'arrow-up': <path d="M12 19V5M5 12l7-7 7 7" />,
+  'arrow-down': <path d="M12 5v14M19 12l-7 7-7-7" />,
+  'arrow-right': <path d="M5 12h14M12 5l7 7-7 7" />,
+  bell: <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />,
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </>
+  ),
+  moon: <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />,
+  monitor: (
+    <>
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>
+  ),
+  film: (
+    <>
+      <rect x="2" y="2" width="20" height="20" rx="2.5" />
+      <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5" />
+    </>
+  ),
+  'play-circle': (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m10 8 6 4-6 4V8z" fill="currentColor" />
+    </>
+  ),
+  captions: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3" />
+    </>
+  ),
+  pip: (
+    <>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  gauge: <path d="M12 14l4-4M3.34 19a10 10 0 1 1 17.32 0" />,
+  'badge-check': (
+    <>
+      <path d="M12 2l2.4 1.8 3-.2 1 2.8 2.5 1.6-.9 2.9.9 2.9-2.5 1.6-1 2.8-3-.2L12 22l-2.4-1.8-3 .2-1-2.8-2.5-1.6.9-2.9-.9-2.9 2.5-1.6 1-2.8 3 .2z" fill="currentColor" stroke="none" />
+      <path d="m8.5 12 2.4 2.4 4.6-4.8" stroke="var(--on-accent, #fff)" strokeWidth="2.2" />
+    </>
+  ),
+  'user-plus': (
+    <>
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21a7 7 0 0 1 14 0M19 8v6M22 11h-6" />
+    </>
+  ),
+  'user-check': (
+    <>
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21a7 7 0 0 1 14 0M16 11l2 2 4-4" />
+    </>
+  ),
+  layers: <path d="m12 2 10 5-10 5L2 7l10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
+  send: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />,
+  'x-circle': (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m15 9-6 6M9 9l6 6" />
+    </>
+  ),
+  type: <path d="M4 7V4h16v3M9 20h6M12 4v16" />,
+  accessibility: (
+    <>
+      <circle cx="12" cy="4.5" r="1.8" fill="currentColor" />
+      <path d="M5 8.5l7 1.5 7-1.5M12 10v5l-3 6M12 15l3 6" />
+    </>
+  ),
+  key: <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zM15.5 7.5l3 3L22 7l-3-3" />,
+  plug: <path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z" />,
+  timer: (
+    <>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l2 2M9 2h6" />
+    </>
+  ),
 };
 
 function Icon({ name, size = 20, className, strokeWidth = 2, title }) {

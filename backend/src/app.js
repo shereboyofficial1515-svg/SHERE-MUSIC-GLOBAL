@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.routes.js';
 import publicRoutes from './routes/public.routes.js';
 import libraryRoutes from './routes/library.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import studioRoutes from './routes/studio.routes.js';
 
 export function createApp() {
   const app = express();
@@ -56,6 +57,7 @@ export function createApp() {
   api.use(maintenanceGate);
   api.use('/auth', authRoutes);
   api.use('/admin', adminRoutes);
+  api.use('/studio', studioRoutes);
   api.use('/', libraryRoutes);
   api.use('/', publicRoutes);
 

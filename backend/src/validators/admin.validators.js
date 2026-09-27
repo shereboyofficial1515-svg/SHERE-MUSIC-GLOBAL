@@ -3,13 +3,13 @@ import { boolish, nullableText, pagination, searchQuery, uuid } from './common.j
 
 export const userListQuery = z.object({
   q: searchQuery,
-  role: z.enum(['user', 'admin']).optional(),
+  role: z.enum(['user', 'artist', 'admin']).optional(),
   status: z.enum(['active', 'disabled']).optional(),
   ...pagination(100, 25),
 });
 
 export const userStatusSchema = z.object({ status: z.enum(['active', 'disabled']) });
-export const userRoleSchema = z.object({ role: z.enum(['user', 'admin']) });
+export const userRoleSchema = z.object({ role: z.enum(['user', 'artist', 'admin']) });
 
 export const adminPlaylistQuery = z.object({
   q: searchQuery,
@@ -54,5 +54,32 @@ export const settingsSchema = z
     maintenanceMode: boolish,
     maintenanceMessage: nullableText(300),
     featuredLimit: z.coerce.number().int().min(1).max(50),
+    maxVideoMb: z.coerce.number().int().min(1).max(10240),
+    lyricsEnabled: boolish,
+    videosEnabled: boolish,
+    allowArtistSignup: boolish,
+    artistAutoPublish: boolish,
+    emailNewReleases: boolish,
+    defaultTheme: z.enum(['light', 'dark', 'system']),
+    subtitleLanguages: z
+      .array(
+        z.object({
+          code: z.string().trim().regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})?$/, 'Language codes look like en, fr, yo or pcm.'),
+          label: z.string().trim().min(1).max(40),
+        })
+      )
+      .max(40),
+    lyricsProvider: z
+      .object({
+        mode: z.enum(['manual', 'external', 'both']),
+        name: nullableText(60),
+        apiUrl: url,
+        // undefined = keep, null/'' = clear, string = replace. Never returned.
+        apiKey: z.preprocess((v) => (v === '' ? null : v), z.string().trim().max(500).nullable()).optional(),
+        attribution: nullableText(300),
+      })
+      .partial(),
   })
   .partial();
+
+export const reviewQueueQuery = z.object({ type: z.enum(['all', 'songs', 'videos', 'lyrics']).default('all') });

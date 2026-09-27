@@ -5,14 +5,14 @@
 const escapeHtml = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-const COLORS = { bg: '#0b0f17', card: '#121826', text: '#e6eaf2', muted: '#9aa4b8', sky: '#38bdf8', gold: '#f5b942' };
+const COLORS = { bg: '#0b0f17', card: '#121826', text: '#e6eaf2', muted: '#9aa4b8', sky: '#1fcf7c', gold: '#ffffff' };
 
 function layout({ siteName, preheader, heading, paragraphs, cta, notice }) {
   const brand = escapeHtml(siteName);
   const body = paragraphs.map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${COLORS.text};">${p}</p>`).join('');
   const button = cta
     ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:8px 0 24px;"><tr><td style="border-radius:999px;background:${COLORS.sky};">
-         <a href="${escapeHtml(cta.url)}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#04121c;text-decoration:none;border-radius:999px;">${escapeHtml(cta.label)}</a>
+         <a href="${escapeHtml(cta.url)}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#04140b;text-decoration:none;border-radius:999px;">${escapeHtml(cta.label)}</a>
        </td></tr></table>
        <p style="margin:0 0 16px;font-size:12px;line-height:1.6;color:${COLORS.muted};">If the button does not work, copy this link into your browser:<br><a href="${escapeHtml(cta.url)}" style="color:${COLORS.sky};word-break:break-all;">${escapeHtml(cta.url)}</a></p>`
     : '';
@@ -92,5 +92,36 @@ export function accountNotificationEmail({ siteName, name, heading, message, cta
       notice: `If you did not expect this change, please reset your password immediately${cta ? '' : ' or contact support'}.`,
     }),
     text: textVersion([`Hi ${name},`, message, cta?.url]),
+  };
+}
+
+export function releaseEmail({ siteName, name, artistName, title, kind, url }) {
+  const what = kind === 'video' ? 'music video' : 'music';
+  return {
+    subject: `New ${what} from ${artistName}`,
+    html: layout({
+      siteName,
+      preheader: `${artistName} just released "${title}".`,
+      heading: `New ${what} from ${escapeHtml(artistName)}`,
+      paragraphs: [`Hi ${escapeHtml(name)},`, `${escapeHtml(artistName)}, an artist you follow, just released <strong>${escapeHtml(title)}</strong>.`],
+      cta: { label: kind === 'video' ? 'Watch now' : 'Listen now', url },
+      notice: `You get this email because you follow ${escapeHtml(artistName)}. Turn off release emails in Settings → Notifications.`,
+    }),
+    text: textVersion([`Hi ${name},`, `${artistName} just released "${title}".`, url]),
+  };
+}
+
+export function changeEmailEmail({ siteName, name, url, newEmail }) {
+  return {
+    subject: `Confirm your new ${siteName} email address`,
+    html: layout({
+      siteName,
+      preheader: 'Confirm your new email address.',
+      heading: 'Confirm your new email address',
+      paragraphs: [`Hi ${escapeHtml(name)},`, `You asked to change your account email to <strong>${escapeHtml(newEmail)}</strong>. Confirm the change below. This link expires in 24 hours.`],
+      cta: { label: 'Confirm new email', url },
+      notice: 'If you did not request this change, ignore this email and your address will stay the same.',
+    }),
+    text: textVersion([`Hi ${name},`, `Confirm your new email address (${newEmail}):`, url]),
   };
 }

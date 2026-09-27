@@ -1,12 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>SHERE MUSIC — Discover, stream and download music</title>
-    <meta name="description" content="SHERE MUSIC: discover new songs, stream music instantly and download your favourite tracks. Afrobeats, Amapiano, Gospel, Hip-Hop and more." />
-    <meta name="theme-color" content="#0b0f17" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="SHERE MUSIC: discover new songs, stream music with live lyrics, watch music videos and download your favourite tracks." />
+    <meta name="theme-color" content="#070908" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f8f7" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -18,9 +19,31 @@
     <meta property="og:image" content="/og-image.svg" />
     <meta name="twitter:card" content="summary_large_image" />
 
+    <!--
+      Apply the saved theme and accessibility preferences before the first paint,
+      so the page never flashes the wrong theme. Kept tiny and dependency-free.
+    -->
+    <script>
+      (function () {
+        try {
+          var p = JSON.parse(localStorage.getItem('sm:prefs') || '{}');
+          var d = document.documentElement;
+          var theme = p.theme || localStorage.getItem('sm:site-theme') || 'dark';
+          if (theme === 'system') theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          d.setAttribute('data-theme', theme);
+          if (p.largeText) d.classList.add('a11y-large-text');
+          if (p.highContrast) d.classList.add('a11y-high-contrast');
+          if (p.largerControls) d.classList.add('a11y-larger-controls');
+          if (p.reducedMotion === 'on' || (p.reducedMotion !== 'off' && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+            d.classList.add('reduce-motion');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
   </head>
   <body>
     <noscript>SHERE MUSIC needs JavaScript enabled to play music.</noscript>

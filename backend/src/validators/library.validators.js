@@ -14,3 +14,12 @@ export const createPlaylistSchema = z.object({
 export const updatePlaylistSchema = createPlaylistSchema.partial();
 
 export const addPlaylistSongSchema = z.object({ songId: uuid });
+
+export const studioSongListQuery = z.object({
+  q: z.string().trim().max(100).optional(),
+  status: z.enum(['all', 'draft', 'pending', 'approved', 'published', 'rejected']).default('all'),
+  sort: z.enum(['created_desc', 'title', 'plays', 'downloads']).default('created_desc'),
+  ...pagination(100, 25),
+});
+
+export const followersQuery = z.object({ artist: z.string().uuid().optional(), ...pagination(100, 30) });

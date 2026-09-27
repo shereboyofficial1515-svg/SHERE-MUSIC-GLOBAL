@@ -10,12 +10,13 @@ import { usePaginatedList } from '../../hooks/usePaginatedList.js';
 import { musicService } from '../../services/musicService.js';
 
 /** Shared browse page for artists and albums (same filter + grid + infinite scroll). */
-function BrowsePage({ kind }) {
+function BrowsePage({ kind, embedded = false }) {
   const isArtists = kind === 'artists';
   const [q, setQ] = useState('');
   const [sort, setSort] = useState(isArtists ? 'popular' : 'latest');
   const term = useDebounce(q.trim(), 300);
   useMeta({
+    skip: embedded,
     title: isArtists ? 'Artists' : 'Albums',
     description: isArtists ? 'Browse artists on SHERE MUSIC and listen to their songs.' : 'Browse albums on SHERE MUSIC and play them in full.',
   });
@@ -27,9 +28,9 @@ function BrowsePage({ kind }) {
   const list = usePaginatedList(fetchPage, [term, sort, isArtists]);
 
   return (
-    <div className="container page">
+    <div className={embedded ? undefined : 'container page'}>
       <header className="page-header">
-        <h1 className="page-title">{isArtists ? 'Artists' : 'Albums'}</h1>
+        {embedded ? <span /> : <h1 className="page-title">{isArtists ? 'Artists' : 'Albums'}</h1>}
         <div className="row-gap">
           <div className="search-box search-box--inline">
             <Icon name="search" size={16} className="search-box__icon" />

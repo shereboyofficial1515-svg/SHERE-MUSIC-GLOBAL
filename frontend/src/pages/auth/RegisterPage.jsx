@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext.jsx';
 import { useSettings } from '../../context/SettingsContext.jsx';
 import { useMeta } from '../../hooks/useMeta.js';
 import { authService } from '../../services/authService.js';
+import OAuthButtons from '../../components/auth/OAuthButtons.jsx';
 
 export function validatePassword(password) {
   if (password.length < 8) return 'Password must be at least 8 characters.';
@@ -71,7 +72,9 @@ export default function RegisterPage() {
   return (
     <div className="auth-card">
       <h1 className="auth-card__title">Create your account</h1>
-      <p className="auth-card__subtitle">Save favourites, build playlists and keep track of your downloads.</p>
+      <p className="auth-card__subtitle">Save favourites, follow artists, build playlists — or start publishing your own music.</p>
+      <OAuthButtons intent="login" verb="Sign up" />
+      <div className="divider">or with email</div>
       {error ? <Alert type="error">{error}</Alert> : null}
       <form onSubmit={submit} className="stack" noValidate>
         <TextField label="Name" autoComplete="name" value={form.name} onChange={set('name')} error={errors.name} maxLength={80} required />
@@ -83,7 +86,7 @@ export default function RegisterPage() {
         </button>
       </form>
       <p className="auth-card__footer">
-        Already have an account? <Link to="/login">Sign in</Link>
+        Already have an account? <Link to="/login">Log in</Link>
       </p>
     </div>
   );

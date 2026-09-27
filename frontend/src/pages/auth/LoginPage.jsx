@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useMeta } from '../../hooks/useMeta.js';
 import { authService } from '../../services/authService.js';
+import OAuthButtons from '../../components/auth/OAuthButtons.jsx';
 
 export default function LoginPage() {
   useMeta({ title: 'Sign in', noindex: true });
@@ -61,7 +62,7 @@ export default function LoginPage() {
   return (
     <div className="auth-card">
       <h1 className="auth-card__title">Welcome back</h1>
-      <p className="auth-card__subtitle">Sign in to your favourites, playlists and downloads.</p>
+      <p className="auth-card__subtitle">Log in to your favourites, playlists, lyrics and follows.</p>
       {sessionMessage ? <Alert type="warning">{sessionMessage}</Alert> : null}
       {error ? <Alert type="error">{error}</Alert> : null}
       {unverified ? (
@@ -81,11 +82,13 @@ export default function LoginPage() {
           </Link>
         </div>
         <button type="submit" className="btn btn--primary btn--block btn--lg" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
+          {busy ? 'Logging in…' : 'Log in'}
         </button>
       </form>
+      <div className="divider">or</div>
+      <OAuthButtons intent="login" returnTo={location.state?.from || '/'} />
       <p className="auth-card__footer">
-        New to SHERE MUSIC? <Link to="/register">Create an account</Link>
+        Don&apos;t have an account? <Link to="/register">Create account</Link>
       </p>
     </div>
   );

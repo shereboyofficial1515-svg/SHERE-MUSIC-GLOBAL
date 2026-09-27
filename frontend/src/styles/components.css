@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: calc(var(--control) + 2px);
   padding: 0 18px;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
@@ -23,11 +23,19 @@
   opacity: 0.55;
 }
 .btn--primary {
-  background: var(--sky);
-  color: #04121c;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 6px 20px -8px var(--accent-glow);
 }
 .btn--primary:hover:not(:disabled) {
-  background: #5ccbfa;
+  background: var(--accent-strong);
+}
+.btn--inverse {
+  background: var(--inverse);
+  color: var(--on-inverse);
+}
+.btn--inverse:hover:not(:disabled) {
+  opacity: 0.9;
 }
 .btn--secondary {
   background: var(--surface-2);
@@ -47,11 +55,11 @@
 }
 .btn--danger {
   background: var(--danger-soft);
-  border-color: rgba(248, 113, 113, 0.35);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
   color: var(--danger);
 }
 .btn--danger:hover:not(:disabled) {
-  background: rgba(248, 113, 113, 0.24);
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
 }
 .btn--sm {
   min-height: 34px;
@@ -73,8 +81,8 @@
 .icon-btn {
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: var(--control);
+  height: var(--control);
   flex-shrink: 0;
   border: 0;
   border-radius: 50%;
@@ -109,14 +117,14 @@
   height: 44px;
   border: 0;
   border-radius: 50%;
-  background: var(--sky);
-  color: #04121c;
-  box-shadow: 0 6px 18px rgba(14, 165, 233, 0.35);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 8px 22px -6px var(--accent-glow);
   transition: transform 0.15s var(--ease), background 0.15s;
 }
 .play-btn:hover {
   transform: scale(1.06);
-  background: #5ccbfa;
+  background: var(--accent-strong);
 }
 .play-btn--sm {
   width: 32px;
@@ -128,8 +136,8 @@
   height: 60px;
 }
 .play-btn .spinner {
-  border-color: rgba(4, 18, 28, 0.25);
-  border-top-color: #04121c;
+  border-color: color-mix(in srgb, var(--on-accent) 25%, transparent);
+  border-top-color: var(--on-accent);
 }
 
 /* ─── Forms ─────────────────────────────────────────────────────────────── */
@@ -297,7 +305,7 @@ input[type='date'].input {
 }
 .switch--on .switch__thumb {
   transform: translateX(20px);
-  background: #04121c;
+  background: var(--on-accent);
 }
 
 /* Range sliders (seek + volume). --pct / --buf are set inline. */
@@ -314,7 +322,7 @@ input[type='date'].input {
   --track: linear-gradient(
     to right,
     var(--sky) 0 var(--pct, 0%),
-    rgba(155, 167, 189, 0.45) var(--pct, 0%) var(--buf, 0%),
+    var(--border-strong) var(--pct, 0%) var(--buf, 0%),
     var(--surface-3) var(--buf, 0%) 100%
   );
 }
@@ -415,7 +423,7 @@ input[type='date'].input {
 .spinner {
   display: inline-block;
   flex-shrink: 0;
-  border: 2px solid rgba(155, 167, 189, 0.3);
+  border: 2px solid var(--border-strong);
   border-top-color: var(--sky);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -496,25 +504,31 @@ input[type='date'].input {
   flex-shrink: 0;
   margin-top: 2px;
 }
+.alert {
+  color: var(--text);
+}
+.alert > svg {
+  color: var(--alert-color, var(--info));
+}
 .alert--info {
-  background: var(--sky-soft);
-  border-color: rgba(56, 189, 248, 0.35);
-  color: #bae6fd;
+  --alert-color: var(--info);
+  background: var(--info-soft);
+  border-color: color-mix(in srgb, var(--info) 35%, transparent);
 }
 .alert--error {
+  --alert-color: var(--danger);
   background: var(--danger-soft);
-  border-color: rgba(248, 113, 113, 0.35);
-  color: #fecaca;
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 .alert--success {
+  --alert-color: var(--success);
   background: var(--success-soft);
-  border-color: rgba(52, 211, 153, 0.35);
-  color: #a7f3d0;
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
 }
 .alert--warning {
+  --alert-color: var(--warning);
   background: var(--warning-soft);
-  border-color: rgba(251, 191, 36, 0.35);
-  color: #fde68a;
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
 }
 
 .progress {
@@ -799,7 +813,7 @@ body:has(.player) .toast-region {
   border-color: var(--text);
 }
 .chip--active:hover {
-  background: #fff;
+  opacity: 0.9;
 }
 
 .tabs {
@@ -851,7 +865,7 @@ body:has(.player) .toast-region {
   margin-bottom: 4px;
 }
 .panel--danger {
-  border-color: rgba(248, 113, 113, 0.3);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
   display: grid;
   gap: 12px;
 }

@@ -17,6 +17,10 @@ export function UserBadges({ user }) {
         <span className="badge badge--gold">
           <Icon name="shield" size={12} /> Admin
         </span>
+      ) : user.role === 'artist' ? (
+        <span className="badge badge--info">
+          <Icon name="mic" size={12} /> Artist
+        </span>
       ) : null}
       <span className={cx('badge', user.status === 'active' ? 'badge--success' : 'badge--danger')}>
         <Icon name={user.status === 'active' ? 'check-circle' : 'x'} size={12} /> {user.status === 'active' ? 'Active' : 'Disabled'}
@@ -50,6 +54,7 @@ export default function UsersPage() {
         <select className="input select select--inline" value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }} aria-label="Filter by role">
           <option value="">All roles</option>
           <option value="user">Listeners</option>
+          <option value="artist">Artists</option>
           <option value="admin">Administrators</option>
         </select>
         <select className="input select select--inline" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} aria-label="Filter by status">

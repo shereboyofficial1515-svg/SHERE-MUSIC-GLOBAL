@@ -1,6 +1,6 @@
 import { api, uploadWithProgress } from './api.js';
 
-/** Endpoints for the signed-in listener: profile, favorites, playlists, history. */
+/** Endpoints for the signed-in listener: profile, settings, library, notifications. */
 export const userService = {
   profile: () => api.get('/me/profile'),
   updateProfile: (body) => api.patch('/me', body),
@@ -13,6 +13,21 @@ export const userService = {
   deleteAccount: (password) => api.delete('/me', { body: { password } }),
   downloads: (query) => api.get('/me/downloads', { query }),
   recent: () => api.get('/me/recent'),
+
+  settings: () => api.get('/me/settings'),
+  saveSettings: (body) => api.put('/me/settings', body),
+  requestEmailChange: (body) => api.post('/me/email', body),
+  cancelEmailChange: () => api.delete('/me/email'),
+  setPassword: (body) => api.post('/me/password', body),
+  signOutOthers: () => api.post('/me/sessions/revoke-others'),
+  connectedAccounts: () => api.get('/me/connected-accounts'),
+  disconnect: (provider) => api.delete(`/me/connected-accounts/${provider}`),
+
+  notifications: () => api.get('/me/notifications'),
+  markNotificationsRead: (ids) => api.post('/me/notifications/read', ids ? { ids } : {}),
+  deleteNotification: (id) => api.delete(`/me/notifications/${id}`),
+  following: () => api.get('/me/following'),
+  feed: () => api.get('/me/feed'),
 
   favorites: (query) => api.get('/favorites', { query }),
   favoriteIds: () => api.get('/favorites/ids'),

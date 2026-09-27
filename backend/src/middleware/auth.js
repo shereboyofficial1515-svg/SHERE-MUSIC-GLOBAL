@@ -6,7 +6,7 @@ import { dbError } from '../utils/db.js';
 import { clearSession } from '../services/session.service.js';
 
 export const USER_FIELDS =
-  'id,name,email,role,avatar_path,email_verified,status,token_version,last_login_at,created_at,updated_at';
+  'id,name,email,role,avatar_path,email_verified,status,token_version,last_login_at,created_at,updated_at,username,bio,location,website,social_links,favorite_genre_ids,pending_email';
 
 /**
  * Resolve the session cookie into a user on every request (req.user or null).
@@ -54,10 +54,22 @@ export function requireAuth(req, res, next) {
   next(unauthorized());
 }
 
-export function requireAdmin(req, res, next) {
-  requireAuth(req, res, (err) => {
-    if (err) return next(err);
-    if (req.user.role !== 'admin') return next(forbidden('Administrator access required.', 'ADMIN_ONLY'));
-    next();
-  });
-}
+/** Allow only the given roles. Roles are re-read from the database on every request (see attachUser). */
+export const requireRole = (...roles) =>
+  function roleGuard(req, res, next) {
+    requireAuth(req, res, (err) => {
+      if (err) return next(err);
+      if (!roles.includes(req.user.role)) {
+        return next(
+          roles.includes('admin') && roles.length === 1
+            ? forbidden('Administrator access required.', 'ADMIN_ONLY')
+            : forbidden('This area is for SHERE MUSIC artists. Create an artist profile in Studio first.', 'ARTIST_ONLY')
+        );
+      }
+      next();
+    });
+  };
+
+export const requireAdmin = requireRole('admin');
+/** Studio access: artists manage their own content; admins may use Studio too (still scoped to artists they own). */
+export const requireArtist = requireRole('artist', 'admin');

@@ -25,6 +25,22 @@ const buckets = [
       allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/x-icon'],
     },
   },
+  {
+    id: env.supabase.videoBucket,
+    options: {
+      public: false, // streamed through signed URLs; uploaded via one-time signed upload URLs
+      fileSizeLimit: Math.min(env.uploads.maxVideoMb * MB, 5 * GB),
+      allowedMimeTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+    },
+  },
+  {
+    id: env.supabase.subtitleBucket,
+    options: {
+      public: false, // served through the API
+      fileSizeLimit: 2 * MB,
+      allowedMimeTypes: ['text/vtt'],
+    },
+  },
 ];
 
 const { data: existing, error: listError } = await supabase.storage.listBuckets();

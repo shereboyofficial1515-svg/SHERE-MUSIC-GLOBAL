@@ -1,6 +1,14 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { musicService } from '../services/musicService.js';
 import { useToast } from './ToastContext.jsx';
+import { usePreferences } from './PreferencesContext.jsx';
+
+/** Network Information API (Chromium/Android). Unknown elsewhere → null. */
+const onCellular = () => {
+  const c = navigator.connection;
+  if (!c) return null;
+  return c.type === 'cellular' || (c.type === undefined && c.saveData === true);
+};
 
 const DownloadContext = createContext(null);
 
@@ -33,6 +41,7 @@ function saveViaLink(url) {
  */
 export function DownloadProvider({ children }) {
   const toast = useToast();
+  const { prefs } = usePreferences();
   const [progress, setProgress] = useState({}); // songId → 0-100 | -1 (indeterminate)
 
   const setFor = (id, value) =>
@@ -46,6 +55,12 @@ export function DownloadProvider({ children }) {
   const download = useCallback(
     async (song) => {
       if (progress[song.id] !== undefined) return;
+      // Settings → Downloads → "Only download on Wi-Fi" (where the browser can tell).
+      if (prefs.wifiOnlyDownloads && onCellular()) {
+        toast.warning('You are on mobile data. Downloads are set to Wi-Fi only (Settings → Downloads).');
+        return;
+      }
+      const notify = prefs.downloadNotifications !== false;
       setFor(song.id, -1);
       let signed;
       try {
@@ -56,7 +71,7 @@ export function DownloadProvider({ children }) {
         return;
       }
 
-      toast.info(`Downloading "${song.title}"…`);
+      if (notify) toast.info(`Downloading "${song.title}"…`);
       try {
         const res = await fetch(signed.url);
         if (!res.ok || !res.body) throw new Error('stream');
@@ -72,15 +87,15 @@ export function DownloadProvider({ children }) {
           if (total) setFor(song.id, Math.round((received / total) * 100));
         }
         saveBlob(new Blob(chunks, { type: signed.mime || 'audio/mpeg' }), signed.filename);
-        toast.success(`Downloaded "${song.title}".`);
+        if (notify) toast.success(`Downloaded "${song.title}".`);
       } catch {
         saveViaLink(signed.url);
-        toast.success(`Download started for "${song.title}".`);
+        if (notify) toast.success(`Download started for "${song.title}".`);
       } finally {
         setFor(song.id, null);
       }
     },
-    [progress, toast]
+    [progress, toast, prefs.wifiOnlyDownloads, prefs.downloadNotifications]
   );
 
   const value = useMemo(() => ({ download, progress }), [download, progress]);

@@ -49,6 +49,8 @@ export const env = Object.freeze({
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     audioBucket: process.env.STORAGE_AUDIO_BUCKET || 'music',
     mediaBucket: process.env.STORAGE_MEDIA_BUCKET || 'media',
+    videoBucket: process.env.STORAGE_VIDEO_BUCKET || 'videos',
+    subtitleBucket: process.env.STORAGE_SUBTITLE_BUCKET || 'subtitles',
   },
   jwt: {
     secret: process.env.JWT_SECRET,
@@ -68,5 +70,11 @@ export const env = Object.freeze({
   uploads: {
     maxAudioMb: Math.max(1, int(process.env.MAX_AUDIO_MB, 50)),
     maxImageMb: Math.max(1, int(process.env.MAX_IMAGE_MB, 5)),
+    maxVideoMb: Math.max(1, int(process.env.MAX_VIDEO_MB, 500)),
+  },
+  // Optional external lyrics provider. When set, these override the values saved in admin settings.
+  lyrics: {
+    apiUrl: process.env.LYRICS_API_URL || '',
+    apiKey: process.env.LYRICS_API_KEY || '',
   },
 });

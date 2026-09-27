@@ -4,7 +4,8 @@ import Icon from '../../components/ui/Icon.jsx';
 import Artwork from '../../components/ui/Artwork.jsx';
 import { ConfirmDialog } from '../../components/ui/Dialog.jsx';
 import { EmptyState, ErrorState, Spinner } from '../../components/ui/Feedback.jsx';
-import { AdminHeader, Pagination, SearchInput, StatusBadge } from '../../components/admin/AdminUI.jsx';
+import { AdminHeader, Pagination, SearchInput } from '../../components/admin/AdminUI.jsx';
+import StatusBadge, { STATUS_OPTIONS } from '../../components/content/StatusBadge.jsx';
 import { useAsync } from '../../hooks/useAsync.js';
 import { useDebounce } from '../../hooks/useDebounce.js';
 import { useMeta } from '../../hooks/useMeta.js';
@@ -101,8 +102,11 @@ export default function SongsPage() {
         <SearchInput value={q} onChange={(v) => { setQ(v); update('page', ''); }} placeholder="Search title, artist, album, genre" />
         <select className="input select select--inline" value={status} onChange={(e) => update('status', e.target.value === 'all' ? '' : e.target.value)} aria-label="Filter by status">
           <option value="all">All statuses</option>
-          <option value="published">Published</option>
-          <option value="draft">Drafts</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
         </select>
         <select className="input select select--inline" value={genre} onChange={(e) => update('genre', e.target.value)} aria-label="Filter by genre">
           <option value="">All genres</option>
@@ -177,7 +181,7 @@ export default function SongsPage() {
                   </td>
                   <td className="hide-md">{song.genre?.name || <span className="text-muted">—</span>}</td>
                   <td>
-                    <StatusBadge published={song.isPublished} />
+                    <StatusBadge status={song.status} />
                   </td>
                   <td className="hide-sm num">{formatCount(song.playCount)}</td>
                   <td className="hide-sm num">{formatCount(song.downloadCount)}</td>
@@ -190,6 +194,9 @@ export default function SongsPage() {
                       <button type="button" className="icon-btn" onClick={() => toggleFeatured(song)} disabled={busyId === song.id} aria-label={song.isFeatured ? `Unfeature ${song.title}` : `Feature ${song.title}`} aria-pressed={song.isFeatured}>
                         <Icon name={song.isFeatured ? 'star-filled' : 'star'} size={18} />
                       </button>
+                      <Link to={`/admin/lyrics/${song.id}`} className="icon-btn hide-sm" aria-label={`Lyrics for ${song.title}`} title="Lyrics">
+                        <Icon name="lyrics" size={18} />
+                      </Link>
                       <Link to={`/admin/songs/${song.id}/edit`} className="icon-btn" aria-label={`Edit ${song.title}`}>
                         <Icon name="edit" size={18} />
                       </Link>

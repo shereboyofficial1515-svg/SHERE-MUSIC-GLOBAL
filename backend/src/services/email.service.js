@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import { env } from '../config/env.js';
 import { getSettings } from './settings.service.js';
-import { accountNotificationEmail, passwordResetEmail, verificationEmail } from './emailTemplates.js';
+import { accountNotificationEmail, changeEmailEmail, passwordResetEmail, verificationEmail } from './emailTemplates.js';
 
 const resend = env.resend.apiKey ? new Resend(env.resend.apiKey) : null;
 
@@ -40,4 +40,24 @@ export async function sendAccountNotification(user, { heading, message, withLogi
   const { site_name: siteName } = await getSettings();
   const cta = withLoginLink ? { label: `Open ${siteName}`, url: `${env.frontendUrl}/login` } : undefined;
   await sendSafely(user.email, accountNotificationEmail({ siteName, name: user.name, heading, message, cta }));
+}
+
+/** Confirm an email change: the link goes to the NEW address. */
+export async function sendEmailChangeConfirmation(user, newEmail, token) {
+  const { site_name: siteName } = await getSettings();
+  await send(newEmail, changeEmailEmail({ siteName, name: user.name, newEmail, url: link('/confirm-email', token) }));
+}
+
+/** Send many emails (Resend batch API, 100 per request). Failures are logged. */
+export async function sendBatch(messages) {
+  if (!messages.length) return;
+  if (!resend) {
+    for (const m of messages) console.log(`\n[email:dev] To: ${m.to}\n[email:dev] Subject: ${m.subject}\n${m.text}\n`);
+    return;
+  }
+  for (let i = 0; i < messages.length; i += 100) {
+    const chunk = messages.slice(i, i + 100).map(({ to, subject, html, text }) => ({ from: env.resend.from, to, subject, html, text }));
+    const { error } = await resend.batch.send(chunk);
+    if (error) console.error('[email] Batch send failed:', error.message || error.name);
+  }
 }

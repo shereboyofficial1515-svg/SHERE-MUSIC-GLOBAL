@@ -2,12 +2,21 @@ import { Router } from 'express';
 import * as library from '../controllers/library.controller.js';
 import * as me from '../controllers/me.controller.js';
 import { featuredPlaylists } from '../controllers/catalog.controller.js';
+import * as social from '../controllers/social.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { uploadLimiter } from '../middleware/security.js';
+import { emailLimiter, uploadLimiter } from '../middleware/security.js';
 import { singleImage } from '../middleware/upload.js';
 import { validate } from '../middleware/validate.js';
 import { idParam } from '../validators/common.js';
-import { deleteAccountSchema, updateProfileSchema } from '../validators/auth.validators.js';
+import { deleteAccountSchema } from '../validators/auth.validators.js';
+import {
+  changeEmailSchema,
+  notificationParam,
+  profileSchema,
+  providerParam,
+  setPasswordSchema,
+  settingsSchema,
+} from '../validators/me.validators.js';
 import {
   addPlaylistSongSchema,
   createPlaylistSchema,
@@ -21,7 +30,20 @@ const router = Router();
 
 // ─── Current user ──────────────────────────────────────────────────────────
 router.get('/me/profile', requireAuth, me.profile);
-router.patch('/me', requireAuth, validate(updateProfileSchema), me.updateProfile);
+router.patch('/me', requireAuth, validate(profileSchema), me.updateProfile);
+router.get('/me/settings', requireAuth, me.getMySettings);
+router.put('/me/settings', requireAuth, validate(settingsSchema), me.updateMySettings);
+router.post('/me/email', requireAuth, emailLimiter, validate(changeEmailSchema), me.requestEmailChange);
+router.delete('/me/email', requireAuth, me.cancelEmailChange);
+router.post('/me/password', requireAuth, validate(setPasswordSchema), me.setPassword);
+router.post('/me/sessions/revoke-others', requireAuth, me.signOutOtherSessions);
+router.get('/me/connected-accounts', requireAuth, me.connectedAccounts);
+router.delete('/me/connected-accounts/:provider', requireAuth, validate(providerParam, 'params'), me.disconnectProvider);
+router.get('/me/notifications', requireAuth, social.listNotifications);
+router.post('/me/notifications/read', requireAuth, social.markNotificationsRead);
+router.delete('/me/notifications/:id', requireAuth, validate(notificationParam, 'params'), social.deleteNotification);
+router.get('/me/following', requireAuth, social.myFollowing);
+router.get('/me/feed', requireAuth, social.followingFeed);
 router.post('/me/avatar', requireAuth, uploadLimiter, singleImage('avatar'), me.uploadAvatar);
 router.delete('/me/avatar', requireAuth, me.removeAvatar);
 router.delete('/me', requireAuth, validate(deleteAccountSchema), me.deleteAccount);

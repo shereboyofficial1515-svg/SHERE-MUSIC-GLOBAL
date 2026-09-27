@@ -25,6 +25,16 @@ export function RequireAdmin({ children }) {
   return children;
 }
 
+/** Studio pages beyond onboarding need the artist (or admin) role. */
+export function RequireCreator({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <PageLoader />;
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!['artist', 'admin'].includes(user.role)) return <Navigate to="/studio/welcome" replace />;
+  return children;
+}
+
 export function GuestOnly({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();

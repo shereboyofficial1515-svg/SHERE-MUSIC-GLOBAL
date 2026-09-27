@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom';
 import Icon from '../../components/ui/Icon.jsx';
 import Artwork from '../../components/ui/Artwork.jsx';
 import { ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
-import { AdminHeader, BarChart, StatCard, StatusBadge } from '../../components/admin/AdminUI.jsx';
+import { AdminHeader, BarChart, StatCard } from '../../components/admin/AdminUI.jsx';
+import StatusBadge from '../../components/content/StatusBadge.jsx';
+import { Alert } from '../../components/ui/Feedback.jsx';
 import { useAsync } from '../../hooks/useAsync.js';
 import { useMeta } from '../../hooks/useMeta.js';
 import { adminService } from '../../services/adminService.js';
@@ -23,7 +25,7 @@ function SongMiniList({ title, songs, metric, empty }) {
                 </Link>
                 <span className="text-muted text-sm">{s.artist.name}</span>
               </div>
-              {metric ? <span className="mini-list__metric">{metric(s)}</span> : <StatusBadge published={s.isPublished} />}
+              {metric ? <span className="mini-list__metric">{metric(s)}</span> : <StatusBadge status={s.status} />}
             </li>
           ))}
         </ol>
@@ -53,6 +55,13 @@ export default function DashboardPage() {
           </Link>
         }
       />
+      {t.pendingReviews || t.pendingVerifications ? (
+        <Alert type="warning">
+          {t.pendingReviews ? `${t.pendingReviews} submission${t.pendingReviews === 1 ? '' : 's'}` : ''}
+          {t.pendingReviews && t.pendingVerifications ? ' and ' : ''}
+          {t.pendingVerifications ? `${t.pendingVerifications} verification request${t.pendingVerifications === 1 ? '' : 's'}` : ''} waiting for review. <Link to="/admin/reviews">Open reviews</Link>
+        </Alert>
+      ) : null}
       <div className="stat-grid">
         <StatCard label="Total songs" value={t.totalSongs} icon="music" hint={`${formatCount(t.publishedSongs)} published`} />
         <StatCard label="Total users" value={t.totalUsers} icon="users" tone="gold" hint={`${t.newUsersThisWeek} new this week`} />
@@ -60,6 +69,8 @@ export default function DashboardPage() {
         <StatCard label="Total downloads" value={t.totalDownloads} icon="download" tone="gold" hint={`${t.downloadsToday} today`} />
         <StatCard label="Artists" value={t.totalArtists} icon="mic" />
         <StatCard label="Albums" value={t.totalAlbums} icon="disc" tone="gold" />
+        <StatCard label="Music videos" value={t.totalVideos} icon="film" hint={`${formatCount(t.totalVideoViews)} views`} />
+        <StatCard label="Artist accounts" value={t.totalArtistsUsers} icon="layers" tone="gold" />
       </div>
 
       <section className="panel">
@@ -72,8 +83,8 @@ export default function DashboardPage() {
         <BarChart
           data={data.activity}
           series={[
-            { key: 'plays', label: 'Plays', color: 'var(--sky)' },
-            { key: 'downloads', label: 'Downloads', color: 'var(--gold)' },
+            { key: 'plays', label: 'Plays', color: 'var(--accent)' },
+            { key: 'downloads', label: 'Downloads', color: 'var(--text-subtle)' },
           ]}
           formatLabel={(d) => formatDate(d, { month: 'short', day: 'numeric' })}
         />

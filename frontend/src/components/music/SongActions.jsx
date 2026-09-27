@@ -86,8 +86,9 @@ export const DownloadButton = memo(function DownloadButton({ song, className, wi
   );
 });
 
+/** Share a song (or any item with a `path`) via the native share sheet, falling back to copying the link. */
 export async function shareSong(song, toast) {
-  const url = `${window.location.origin}/song/${song.id}`;
+  const url = `${window.location.origin}${song.path || `/song/${song.id}`}`;
   const text = `${song.title} by ${song.artist?.name} on SHERE MUSIC`;
   if (navigator.share) {
     try {

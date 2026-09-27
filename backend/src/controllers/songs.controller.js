@@ -6,6 +6,7 @@ import { cleanSearchTerm, ilikeAny } from '../utils/search.js';
 import { SONG_FIELDS, toSong } from '../services/mappers.js';
 import { signedAudioUrl } from '../services/storage.service.js';
 import { downloadFilename } from '../services/song.service.js';
+import { getUserSettingsRow } from '../services/userSettings.service.js';
 
 const STREAM_TTL_SECONDS = 4 * 60 * 60; // long enough for seeking through a long listening session
 const DOWNLOAD_TTL_SECONDS = 120;
@@ -96,8 +97,15 @@ export async function streamUrl(req, res) {
   ok(res, { url, mime: song.audio_mime, expiresIn: STREAM_TTL_SECONDS });
 }
 
+/** Listeners who opted out of usage analytics are counted anonymously (so no listening history is kept). */
+async function analyticsUserId(user) {
+  if (!user) return null;
+  const settings = await getUserSettingsRow(user.id);
+  return settings.privacy_preferences.usageAnalytics === false ? null : user.id;
+}
+
 export async function recordPlay(req, res) {
-  const counted = unwrap(await supabase.rpc('record_play', { p_song_id: req.valid.params.id, p_user_id: req.user?.id ?? null }));
+  const counted = unwrap(await supabase.rpc('record_play', { p_song_id: req.valid.params.id, p_user_id: await analyticsUserId(req.user) }));
   if (!counted) throw notFound('Song not found.');
   ok(res, { counted: true });
 }
@@ -111,6 +119,7 @@ export async function download(req, res) {
   const filename = downloadFilename(song, song.audio_mime);
   const url = await signedAudioUrl(song.audio_path, { expiresIn: DOWNLOAD_TTL_SECONDS, download: filename });
 
+  // Download history is a user-facing feature, so signed-in downloads are always attributed.
   const counted = unwrap(await supabase.rpc('record_download', { p_song_id: song.id, p_user_id: req.user?.id ?? null }));
   if (!counted) throw new AppError(404, 'Song not found.', 'NOT_FOUND');
 
