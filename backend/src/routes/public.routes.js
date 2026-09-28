@@ -4,7 +4,7 @@ import * as songs from '../controllers/songs.controller.js';
 import * as social from '../controllers/social.controller.js';
 import * as videos from '../controllers/videos.controller.js';
 import { requireAuth } from '../middleware/auth.js';
-import { downloadLimiter, playLimiter } from '../middleware/security.js';
+import { downloadLimiter, playLimiter, searchLimiter } from '../middleware/security.js';
 import { validate } from '../middleware/validate.js';
 import { idParam } from '../validators/common.js';
 import { listQuery, lyricsQuery, searchSchema, songListQuery } from '../validators/catalog.validators.js';
@@ -16,7 +16,7 @@ const router = Router();
 
 router.get('/settings', catalog.publicSettings);
 router.get('/home', catalog.home);
-router.get('/search', validate(searchSchema, 'query'), catalog.search);
+router.get('/search', searchLimiter, validate(searchSchema, 'query'), catalog.search);
 
 router.get('/songs', validate(songListQuery, 'query'), songs.listSongs);
 router.get('/songs/trending', songs.trending);

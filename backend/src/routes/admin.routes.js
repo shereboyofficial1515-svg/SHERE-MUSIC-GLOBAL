@@ -21,7 +21,7 @@ import {
 import { adminListLyrics, lyricsHandlers } from '../controllers/shared/lyrics.handlers.js';
 import { videoHandlers } from '../controllers/shared/video.handlers.js';
 import { requireAdmin } from '../middleware/auth.js';
-import { uploadLimiter } from '../middleware/security.js';
+import { uploadLimiter, lyricsProviderLimiter } from '../middleware/security.js';
 import { artistImages, singleImage, songFiles, subtitleFile } from '../middleware/upload.js';
 import { validate } from '../middleware/validate.js';
 import { idParam } from '../validators/common.js';
@@ -96,7 +96,7 @@ router.post('/songs/:id/review', id, validate(reviewSchema), songs.reviewSong);
 router.get('/lyrics', validate(lyricsListQuery, 'query'), adminListLyrics);
 router.get('/songs/:id/lyrics', id, lyrics.list);
 router.post('/songs/:id/lyrics', id, validate(saveLyricsSchema), lyrics.save);
-router.get('/songs/:id/lyrics/provider', id, lyrics.importFromProvider);
+router.get('/songs/:id/lyrics/provider', lyricsProviderLimiter, id, lyrics.importFromProvider);
 router.put('/songs/:id/lyrics/:lyricsId', validate(lyricsParams, 'params'), validate(saveLyricsSchema), lyrics.save);
 router.post('/songs/:id/lyrics/:lyricsId/review', validate(lyricsParams, 'params'), validate(reviewSchema), lyrics.review);
 router.patch('/songs/:id/lyrics/:lyricsId/visibility', validate(lyricsParams, 'params'), validate(lyricsVisibilitySchema), lyrics.visibility);

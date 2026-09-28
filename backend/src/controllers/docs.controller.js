@@ -37,7 +37,7 @@ export const adminDocs = {
   asset(req, res) {
     const file = adminAssetPath(req.valid.params.file);
     if (!file) throw notFound('Not found.');
-    res.set({ 'Cache-Control': 'private, max-age=600', 'X-Robots-Tag': 'noindex, nofollow', 'Cross-Origin-Resource-Policy': 'same-site' });
+    res.set({ 'Cache-Control': 'private, max-age=600', 'X-Robots-Tag': 'noindex, nofollow', 'Cross-Origin-Resource-Policy': 'cross-origin' });
     res.sendFile(file);
   },
 };

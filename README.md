@@ -264,23 +264,116 @@ The script prompts for a password (or reads `ADMIN_PASSWORD`). If the email alre
 
 **Creators:** any signed-in listener can open **Studio** (`/studio/welcome`) and create an artist profile, which makes their account an artist account. Admins can turn this off (*Admin → Settings → Studio*) and give artist access from *Admin → Users* instead. Creator uploads wait in *Admin → Reviews* unless *auto-publish* is on.
 
-## Production deployment
+## Production deployment (Vercel + Render)
 
-**Backend** (Render, Railway, Fly.io, a VPS…):
+```text
+Browser ──▶ Vercel (React build)          Paystack ──webhook──┐
+   │                                                          ▼
+   └──── HTTPS /api ──────────────▶ Render (Node + Express API) ──▶ Supabase (Postgres + Storage)
+                                          └──▶ Resend (email)
+```
 
-- Start command `npm start`, Node 20+.
-- Set all backend variables, `NODE_ENV=production`, and `FRONTEND_URL=https://your-site.com`.
-- The server refuses to start in production without Resend configuration.
+The frontend and backend deploy independently from this one repository. Every secret lives in **Render**; Vercel only receives public values. A checklist is in [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md).
 
-**Frontend** (Vercel, Netlify, Cloudflare Pages…):
+### 0. Choose your domains first (important for sign-in)
 
-- Build `npm run build`, output `dist/`.
-- `VITE_API_URL=https://api.your-site.com/api`, `VITE_SITE_URL=https://your-site.com`.
-- Add an SPA fallback so every path serves `index.html` (Netlify: `/* /index.html 200`; Vercel: rewrite to `/index.html`).
+Sessions use an HTTP-only cookie set by the API. **Safari, iPhone and Firefox block cookies from a different site**, so if the site is on `*.vercel.app` and the API on `*.onrender.com`, people on those browsers won't stay signed in. Use one of these:
 
-**Cookies across domains:** by default production cookies are `Secure; SameSite=None`, which works when the frontend and API are on different sites. If both are subdomains of one domain (e.g. `app.example.com` and `api.example.com`) you can use `COOKIE_SAMESITE=lax`. Serving the API under the same domain via a reverse proxy (`/api`) is the most robust option, especially for Safari's tracking protection.
+| Option | Site | API | `VITE_API_URL` |
+| --- | --- | --- | --- |
+| **A. Custom domain (recommended)** | `https://www.your-domain.com` (Vercel) | `https://api.your-domain.com` (Render custom domain) | `https://api.your-domain.com` |
+| **B. Vercel proxy** (no custom API domain yet) | `https://your-app.vercel.app` | Render, reached through Vercel at `/api` | `/api` |
 
-**CORS:** only origins in `FRONTEND_URL` / `CORS_ORIGINS` may call the API with credentials.
+For option B, add this rewrite **above** the existing one in `frontend/vercel.json` (use your Render URL):
+
+```json
+{ "source": "/api/:path*", "destination": "https://shere-music-api.onrender.com/api/:path*" },
+```
+
+The Paystack webhook should always point straight at Render.
+
+### 1. Supabase (database + storage)
+
+1. In the SQL editor run, in order: `schema.sql`, `seed.sql`, `migrations/002_studio_video_lyrics.sql`, `migrations/003_monetization.sql` (all in `backend/src/database/`).
+2. Create the buckets: `cd backend && npm run setup:storage` with production values in your local `.env`, or run `storage.sql`.
+3. RLS is enabled on every table with no policies and no `anon`/`authenticated` grants — only the API (service-role key) reads or writes data. Buckets `music`, `videos`, `subtitles` are private; `media` is public-read with random file names.
+4. *Authentication → URL Configuration*: **Site URL** = your site; **Redirect URLs** = `https://www.your-domain.com/auth/callback` (and `http://localhost:5173/auth/callback` for development).
+5. Free plan: 50 MB per file — keep `MAX_VIDEO_MB` at 50 or upgrade.
+
+### 2. Render (backend)
+
+1. **New → Blueprint** and pick this repository (uses `render.yaml`), or **New → Web Service** with:
+   - Root directory `backend` · Runtime Node · Build `npm ci --omit=dev` · Start `npm start`
+   - Health check path `/api/health`
+2. Environment variables (Render → Environment):
+
+| Variable | Value |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `FRONTEND_URL` | your site, e.g. `https://www.your-domain.com` (comma-separate extra origins, or use `CORS_ORIGINS`) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | from Supabase → Settings → API |
+| `JWT_SECRET` | 48+ random characters (the Blueprint generates one) |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | from Resend |
+| `PAYSTACK_SECRET_KEY` | `sk_test_…` first, `sk_live_…` at launch |
+| `MAX_AUDIO_MB`, `MAX_IMAGE_MB`, `MAX_VIDEO_MB` | 50 / 5 / 50 on the Supabase Free plan |
+| `LYRICS_API_URL`, `LYRICS_API_KEY` | optional |
+
+   `PORT` is set by Render and `TRUST_PROXY` defaults to 1 in production. The server **refuses to start** in production if `FRONTEND_URL` is localhost or plain `http`, or if Resend isn't configured.
+3. Deploy, then open `https://<your-api>/api/health` → `{"status":"ok","service":"SHERE MUSIC API"}`.
+4. Option A: add the custom domain `api.your-domain.com` in Render → Settings → Custom Domains.
+5. Create the first admin from your computer: `cd backend && npm run create-admin -- --email you@example.com --name "Your Name"` (with production values in `.env`).
+
+Uploaded files never touch Render's disk: audio and images are validated in memory and written to Supabase Storage; videos go straight from the browser to Storage with one-time signed upload links. Playback streams from Storage through short-lived signed links. Plus downloads are authorised by the API and streamed through it, so no reusable file link reaches the browser.
+
+### 3. Vercel (frontend)
+
+1. **Add New → Project**, import this repository, **Root Directory `frontend`**. Framework: Vite (auto). Build `npm run build`, output `dist` (also set in `frontend/vercel.json`).
+2. Environment variables (Production):
+
+| Variable | Value |
+| --- | --- |
+| `VITE_API_URL` | Option A: `https://api.your-domain.com` · Option B: `/api` |
+| `VITE_SITE_URL` | `https://www.your-domain.com` |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Supabase project URL and **anon** key (only for Google/Facebook sign-in) |
+
+   Never put a secret in a `VITE_` variable — they are bundled into public JavaScript. The Vercel build fails if `VITE_API_URL` or `VITE_SITE_URL` point to localhost.
+3. Deploy. `frontend/vercel.json` rewrites every route to `index.html`, so refreshing `/discover`, `/studio`, `/admin`, `/help`, `/admin/docs` etc. works.
+4. Add your custom domain in Vercel → Settings → Domains.
+
+### 4. Resend (email)
+
+1. Add and verify your domain (DNS records) in Resend.
+2. Create an API key → Render `RESEND_API_KEY`.
+3. `RESEND_FROM_EMAIL` = `SHERE MUSIC <no-reply@your-domain.com>` (must be on the verified domain).
+
+### 5. Paystack (payments)
+
+1. Paystack → Settings → API Keys & Webhooks: copy the **secret key** into Render `PAYSTACK_SECRET_KEY`. No public key is needed (checkout redirects to Paystack's hosted page).
+2. **Webhook URL** (set it for test and live mode separately): `https://api.your-domain.com/api/payments/paystack/webhook` — your Render URL, not the Vercel one.
+3. Test with the test key and Paystack's test checkout. To go live: activate your Paystack business, switch Render to the `sk_live_…` key, set the live webhook URL, redeploy. The Plus plan is created automatically in each mode.
+
+### 6. Google and Facebook sign-in
+
+Sign-in goes through Supabase Auth; no OAuth secret is stored in this app.
+
+1. **Google Cloud Console** → OAuth client (Web): *Authorized redirect URI* = `https://<project-ref>.supabase.co/auth/v1/callback`; *Authorized JavaScript origins* = your site (and `http://localhost:5173` for development).
+2. **Meta for Developers** → Facebook Login: *Valid OAuth Redirect URI* = the same Supabase callback; add your domain to *App Domains*; switch the app to Live.
+3. Supabase → Authentication → Providers: enable Google/Facebook and paste each client ID and secret there (never in Vercel or Render).
+4. Supabase → URL Configuration: add `https://www.your-domain.com/auth/callback` (production) and `http://localhost:5173/auth/callback` (development).
+
+| | Development | Production |
+| --- | --- | --- |
+| App callback (Supabase redirect URL) | `http://localhost:5173/auth/callback` | `https://www.your-domain.com/auth/callback` |
+| Provider callback (Google/Facebook) | `https://<project-ref>.supabase.co/auth/v1/callback` | same |
+
+### Environments
+
+| | Development | Production |
+| --- | --- | --- |
+| Site | `http://localhost:5173` (`npm run dev`) | Vercel |
+| API | `http://localhost:5000`, proxied at `/api` | Render |
+| Config | `backend/.env`, `frontend/.env` (git-ignored) | Render / Vercel environment settings |
+| Paystack | test key | live key |
 
 **SEO note:** the app is a client-rendered SPA. Titles, descriptions, canonical and Open Graph tags are set per page at runtime, which Google indexes. Social previews (which don't run JavaScript) use the defaults in `index.html`; add prerendering or an edge function if you need per-song link previews. Replace `public/og-image.svg` with a 1200×630 PNG for the widest social-network support.
 

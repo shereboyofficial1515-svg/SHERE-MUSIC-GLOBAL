@@ -104,22 +104,34 @@ The "SHERE MUSIC PLUS" plan is created automatically on the first Plus checkout 
 
 @article deployment
 title: Deployment
-summary: Running SHERE MUSIC in production.
-keywords: deployment, deploy, production, hosting, render, vercel, netlify
+summary: How SHERE MUSIC runs in production on Vercel and Render.
+keywords: deployment, deploy, production, hosting, render, vercel, custom domain, health check
 
-**Backend** (Render, Railway, a VPS…): Node 20+, `npm start`, all backend variables set, `NODE_ENV=production`. Deploy from the repository root (or copy `docs/` and set `DOCS_DIR`) so the Help Center and Admin Guide content is available.
+| Part | Host | Settings |
+| --- | --- | --- |
+| Website (React) | **Vercel** | Root `frontend`, build `npm run build`, output `dist`; `frontend/vercel.json` sends every route to `index.html` |
+| API (Express) | **Render** Web Service | Root `backend`, build `npm ci --omit=dev`, start `npm start`, health check `/api/health` (see `render.yaml`) |
+| Database + files | **Supabase** | Migrations and buckets as in [Database](/admin/docs/operations/database) and [Storage](/admin/docs/operations/storage) |
+| Email / Payments | **Resend** / **Paystack** | Keys only in Render |
 
-**Frontend** (Vercel, Netlify…): `npm run build`, publish `dist/`, set the `VITE_*` variables, and add an SPA fallback so every path serves `index.html`.
+## Sign-in cookies and domains
 
-**Before going live:**
+The session is a cookie set by the API. Safari, iPhone and Firefox block cookies from another site, so either:
 
-- run all migrations and `setup:storage`
-- set `FRONTEND_URL` to the real domain; configure the Supabase OAuth redirect URLs (`/auth/callback`)
-- set the Paystack live key and webhook URL
-- verify the Resend domain
-- create the first admin with `npm run create-admin -- --email you@example.com --name "Your Name"` (the script asks for the password)
+- **use one domain** — `www.your-domain.com` on Vercel and `api.your-domain.com` on Render (recommended), with `VITE_API_URL=https://api.your-domain.com`, or
+- **proxy the API through Vercel** — a `/api/:path*` rewrite to the Render URL in `frontend/vercel.json`, with `VITE_API_URL=/api`.
 
-Cookies across domains default to `Secure; SameSite=None`. Serving the API under the same domain (`/api` via a reverse proxy) is the most robust option.
+## Safety nets
+
+- The API refuses to start in production if `FRONTEND_URL` is localhost or plain `http`, or if email isn't configured.
+- A Vercel build fails if `VITE_API_URL` or `VITE_SITE_URL` point to localhost.
+- `GET /api/health` returns `{"status":"ok","service":"SHERE MUSIC API"}` and nothing else.
+
+The full guide is in the repository's `README.md` (Production deployment) and `DEPLOYMENT_CHECKLIST.md`.
+
+## First admin
+
+Run `npm run create-admin -- --email you@example.com --name "Your Name"` from `backend/` with production values in a local `.env` (the script asks for the password).
 
 @article backups
 title: Backups

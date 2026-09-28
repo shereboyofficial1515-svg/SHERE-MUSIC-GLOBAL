@@ -1,4 +1,4 @@
-import { api } from './api.js';
+import { api, API_BASE } from './api.js';
 
 /** Public catalog endpoints. */
 export const musicService = {
@@ -37,7 +37,7 @@ export const videoService = {
   recordView: (id) => api.post(`/videos/${id}/view`),
   /** Subtitles are fetched as text and turned into same-origin blob: URLs for <track>. */
   async subtitleBlobUrl(videoId, subtitleId, base = '') {
-    const res = await fetch(`${base || (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')}/videos/${videoId}/subtitles/${subtitleId}`, { credentials: 'include' });
+    const res = await fetch(`${base || API_BASE}/videos/${videoId}/subtitles/${subtitleId}`, { credentials: 'include' });
     if (!res.ok) throw new Error('Subtitles could not be loaded.');
     return URL.createObjectURL(new Blob([await res.text()], { type: 'text/vtt' }));
   },

@@ -4,7 +4,19 @@
  * - Adds the CSRF header the backend requires on state-changing requests
  * - Normalises every failure into an ApiError with a user-friendly message
  */
-export const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+export const API_BASE = resolveApiBase(import.meta.env.VITE_API_URL);
+
+/**
+ * The one place the API address is decided.
+ * - VITE_API_URL=https://api.example.com (or …/api) → that server (e.g. Render)
+ * - unset or "/api" → same origin (Vite dev proxy locally, or a Vercel rewrite)
+ */
+function resolveApiBase(value) {
+  const raw = String(value || '/api').trim().replace(/\/+$/, '');
+  if (/^https?:\/\//i.test(raw) && !/\/api$/i.test(raw)) return `${raw}/api`;
+  return raw || '/api';
+}
+
 const CSRF = { 'X-Requested-With': 'SHERE-MUSIC' };
 
 export class ApiError extends Error {

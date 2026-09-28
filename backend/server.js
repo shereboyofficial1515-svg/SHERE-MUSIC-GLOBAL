@@ -3,7 +3,8 @@ import { createApp } from './src/app.js';
 
 const app = createApp();
 
-const server = app.listen(env.port, () => {
+// Render (and most hosts) assign the port through PORT; bind every interface.
+const server = app.listen(env.port, '0.0.0.0', () => {
   console.log(`[shere-music] API listening on port ${env.port} (${env.nodeEnv})`);
 });
 

@@ -3,6 +3,11 @@ node_modules/
 
 # Builds
 frontend/dist/
+dist/
+build/
+coverage/
+logs/
+.vercel/
 
 # Secrets — never commit real environment files
 .env

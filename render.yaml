@@ -1,0 +1,51 @@
+# Render Blueprint for the SHERE MUSIC API (Node.js + Express).
+# The frontend is deployed separately on Vercel (see frontend/vercel.json).
+# Secrets are NOT stored here: every "sync: false" variable is entered in the
+# Render dashboard when the Blueprint is created (or under Environment later).
+services:
+  - type: web
+    name: shere-music-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    # Redeploy when the API or the Help Center / Admin Guide content changes.
+    buildFilter:
+      paths:
+        - backend/**
+        - docs/**
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      # Public site (Vercel or your custom domain), comma-separated if several.
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: MAX_AUDIO_MB
+        value: "50"
+      - key: MAX_IMAGE_MB
+        value: "5"
+      # Keep at or below your Supabase plan's per-file limit (50 MB on Free).
+      - key: MAX_VIDEO_MB
+        value: "50"
+      - key: LYRICS_API_URL
+        sync: false
+      - key: LYRICS_API_KEY
+        sync: false

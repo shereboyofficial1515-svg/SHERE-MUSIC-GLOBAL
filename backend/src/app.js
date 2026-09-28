@@ -60,7 +60,8 @@ export function createApp() {
   app.use(cookieParser());
 
   const api = express.Router();
-  api.get('/health', (req, res) => res.json({ data: { status: 'ok', time: new Date().toISOString() } }));
+  // Render health check. Public, and deliberately reveals nothing about configuration.
+  api.get('/health', (req, res) => res.set('Cache-Control', 'no-store').json({ status: 'ok', service: 'SHERE MUSIC API' }));
   api.use(apiLimiter);
   api.use(csrfGuard);
   api.use(attachUser);
@@ -74,7 +75,7 @@ export function createApp() {
   api.use('/', publicRoutes);
 
   app.use('/api', api);
-  app.get('/', (req, res) => res.json({ data: { name: 'SHERE MUSIC API', health: '/api/health' } }));
+  app.get('/', (req, res) => res.json({ status: 'ok', service: 'SHERE MUSIC API', health: '/api/health' }));
   app.use(notFoundHandler);
   app.use(errorHandler);
 

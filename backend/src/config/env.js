@@ -31,6 +31,22 @@ if (isProduction && !process.env.RESEND_API_KEY) fail('RESEND_API_KEY is require
 if (isProduction && !process.env.RESEND_FROM_EMAIL) fail('RESEND_FROM_EMAIL is required in production.');
 
 const frontendUrls = list(process.env.FRONTEND_URL);
+
+// Production must never point at a development machine.
+if (isProduction) {
+  const LOCAL = /\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i;
+  const origins = [...frontendUrls, ...list(process.env.CORS_ORIGINS)];
+  const local = origins.filter((u) => LOCAL.test(u));
+  // Escape hatch for testing a production build on your own computer only.
+  if (local.length && !bool(process.env.ALLOW_LOCALHOST_IN_PRODUCTION)) {
+    fail(`FRONTEND_URL / CORS_ORIGINS point to localhost (${local.join(', ')}). Set them to your public site, e.g. https://www.example.com.`);
+  }
+  const insecure = origins.filter((u) => u.startsWith('http://') && !LOCAL.test(u));
+  if (insecure.length) fail(`FRONTEND_URL / CORS_ORIGINS must use https in production (${insecure.join(', ')}).`);
+  if (!/^https:\/\//.test(process.env.SUPABASE_URL)) fail('SUPABASE_URL must be the https URL of your Supabase project.');
+  if (!process.env.PAYSTACK_SECRET_KEY) console.warn('[config] PAYSTACK_SECRET_KEY is not set: Plus and paid submissions are unavailable.');
+  else if (process.env.PAYSTACK_SECRET_KEY.startsWith('sk_test_')) console.warn('[config] PAYSTACK_SECRET_KEY is a TEST key. Use the live key (sk_live_…) when you launch.');
+}
 const sessionDays = Math.max(1, int(process.env.SESSION_DAYS, 7));
 const cookieSecure = bool(process.env.COOKIE_SECURE, isProduction);
 const sameSite = (process.env.COOKIE_SAMESITE || (isProduction ? 'none' : 'lax')).toLowerCase();
