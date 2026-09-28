@@ -22,6 +22,7 @@ import './styles/video.css';
 import './styles/settings.css';
 import './styles/admin.css';
 import './styles/plus.css';
+import './styles/docs.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -6,6 +6,7 @@ import { Navigate } from 'react-router-dom';
 import { GuestOnly, RequireAdmin, RequireAuth, RequireCreator } from './components/layout/Guards.jsx';
 import MaintenanceGate from './components/layout/MaintenanceGate.jsx';
 import HomePage from './pages/public/HomePage.jsx';
+import { ADMIN_GUIDE, HELP } from './pages/docs/docsConfig.js';
 import NotFoundPage from './pages/public/NotFoundPage.jsx';
 
 // Route-level code splitting: only the home page ships in the initial bundle.
@@ -68,6 +69,12 @@ const AdminPayments = lazy(() => import('./pages/admin/PaymentsPage.jsx'));
 const AdminPlusMembers = lazy(() => import('./pages/admin/PlusMembersPage.jsx'));
 const AdminSubmissions = lazy(() => import('./pages/admin/SubmissionsPage.jsx'));
 const AdminOffers = lazy(() => import('./pages/admin/OffersPage.jsx'));
+
+const DocsLayout = lazy(() => import('./components/docs/DocsLayout.jsx'));
+const DocsPages = import('./pages/docs/DocsPages.jsx');
+const DocsHome = lazy(() => DocsPages.then((m) => ({ default: m.DocsHome })));
+const DocsArticle = lazy(() => DocsPages.then((m) => ({ default: m.DocsArticle })));
+const DocsSearch = lazy(() => DocsPages.then((m) => ({ default: m.DocsSearch })));
 
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'));
 const AdminDashboard = lazy(() => import('./pages/admin/DashboardPage.jsx'));
@@ -134,6 +141,27 @@ export default function App() {
             <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="confirm-email" element={<ConfirmEmailPage />} />
+          </Route>
+
+          {/* Public Help Center */}
+          <Route path="help" element={<DocsLayout config={HELP} />}>
+            <Route index element={<DocsHome />} />
+            <Route path="search" element={<DocsSearch />} />
+            <Route path=":section/:article" element={<DocsArticle />} />
+          </Route>
+
+          {/* Private Admin Guide: this guard is UX only — /api/admin/docs requires the admin role on the server. */}
+          <Route
+            path="admin/docs"
+            element={
+              <RequireAdmin deny="forbidden">
+                <DocsLayout config={ADMIN_GUIDE} />
+              </RequireAdmin>
+            }
+          >
+            <Route index element={<DocsHome />} />
+            <Route path="search" element={<DocsSearch />} />
+            <Route path=":section/:article" element={<DocsArticle />} />
           </Route>
 
           <Route path="studio" element={guard(RequireCreator, StudioLayout)}>

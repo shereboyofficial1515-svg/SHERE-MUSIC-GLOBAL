@@ -51,6 +51,7 @@ export default function AdminLayout() {
         { to: '/admin/analytics', label: 'Analytics', icon: 'bar-chart' },
         { to: '/admin/reports', label: 'Reports', icon: 'file-text' },
         { to: '/admin/settings', label: 'Settings', icon: 'settings' },
+        { to: '/admin/docs', label: 'Admin Guide', icon: 'file-text' },
       ],
     },
   ];

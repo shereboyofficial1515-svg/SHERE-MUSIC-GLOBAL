@@ -14,6 +14,7 @@ import libraryRoutes from './routes/library.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import studioRoutes from './routes/studio.routes.js';
 import paymentRoutes from './routes/payments.routes.js';
+import helpRoutes from './routes/help.routes.js';
 import { paystackWebhook } from './controllers/payments.controller.js';
 
 export function createApp() {
@@ -68,6 +69,7 @@ export function createApp() {
   api.use('/admin', adminRoutes);
   api.use('/studio', studioRoutes);
   api.use('/payments', paymentRoutes);
+  api.use('/help', helpRoutes);
   api.use('/', libraryRoutes);
   api.use('/', publicRoutes);
 

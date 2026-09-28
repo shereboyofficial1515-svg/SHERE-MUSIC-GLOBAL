@@ -6,6 +6,8 @@ import * as insights from '../controllers/admin/insights.controller.js';
 import * as settings from '../controllers/admin/settings.controller.js';
 import * as reviews from '../controllers/admin/reviews.controller.js';
 import * as monetization from '../controllers/admin/monetization.controller.js';
+import { adminDocs } from '../controllers/docs.controller.js';
+import { docAssetParam, docParams, docSearchQuery } from '../validators/docs.validators.js';
 import {
   adminPaymentsQuery,
   monetizationSettingsSchema,
@@ -171,5 +173,11 @@ router.get('/offers', monetization.listOffers);
 router.post('/offers', uploadLimiter, singleImage('image'), validate(offerSchema), monetization.createOffer);
 router.patch('/offers/:id', uploadLimiter, validate(idParam, 'params'), singleImage('image'), validate(offerUpdateSchema), monetization.updateOffer);
 router.delete('/offers/:id', validate(idParam, 'params'), monetization.deleteOffer);
+
+// Admin Guide (private documentation). requireAdmin above applies to every route here.
+router.get('/docs', adminDocs.index);
+router.get('/docs/search', validate(docSearchQuery, 'query'), adminDocs.find);
+router.get('/docs/articles/:section/:article', validate(docParams, 'params'), adminDocs.read);
+router.get('/docs/assets/:file', validate(docAssetParam, 'params'), adminDocs.asset);
 
 export default router;

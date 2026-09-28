@@ -90,6 +90,14 @@ SHERE-MUSIC/
 └── README.md
 ```
 
+## Documentation
+
+- **Help Center** (`/help`) — public user documentation, from `docs/public/`.
+- **Admin Guide** (`/admin/docs`) — private operator documentation, from `docs/admin/`. Served only to admins by `/api/admin/docs/*`; never part of the website's static files or the public search.
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** — technical architecture.
+
+Update the relevant article when a feature changes and bump `version` / `updated` in `docs/*/guide.json`.
+
 ## Installation
 
 Requirements: **Node.js 20+**, a **Supabase** project and a **Resend** account.
@@ -130,6 +138,7 @@ cp frontend/.env.example frontend/.env
 | `LYRICS_API_URL`, `LYRICS_API_KEY` | no | Optional external lyrics provider. The URL may use `{artist}`, `{title}`, `{album}`, `{duration}`. Overrides the values in Admin → Settings → Lyrics; the key never reaches a browser |
 | `PAYSTACK_SECRET_KEY` | for payments | Paystack secret key — **server only**. `sk_test_…` = test mode, `sk_live_…` = live mode. Without it, checkout is unavailable |
 | `PAYSTACK_PUBLIC_KEY` | no | Not needed for the redirect checkout used today |
+| `DOCS_DIR` | no | Path to the `docs/` folder if the backend is deployed without the repository root |
 | `TRUST_PROXY` | no | Number of proxies in front of the API (default 1 in production) |
 
 Generate a JWT secret:

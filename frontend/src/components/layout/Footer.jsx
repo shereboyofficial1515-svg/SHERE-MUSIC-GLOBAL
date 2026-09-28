@@ -28,6 +28,13 @@ export default function Footer() {
           <Link to="/playlists">Playlists</Link>
           <Link to="/profile">Profile</Link>
         </nav>
+        <nav className="footer__col" aria-label="Help">
+          <h2 className="footer__heading">Help</h2>
+          <Link to="/help">Help Center</Link>
+          <Link to="/help/legal/terms-of-service">Terms</Link>
+          <Link to="/help/legal/privacy-policy">Privacy</Link>
+          <Link to="/help/legal/copyright-policy">Copyright</Link>
+        </nav>
         {socials.length || settings.contactEmail ? (
           <div className="footer__col">
             <h2 className="footer__heading">Connect</h2>

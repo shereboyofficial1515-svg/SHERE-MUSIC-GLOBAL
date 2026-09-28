@@ -30,6 +30,7 @@ export function useNavGroups() {
         { to: '/artists', label: 'Artists', icon: 'mic' },
         { to: '/albums', label: 'Albums', icon: 'disc' },
         ...(settings.monetization?.plus?.enabled !== false ? [{ to: '/plus', label: 'SHERE MUSIC Plus', icon: 'sparkles' }] : []),
+        { to: '/help', label: 'Help', icon: 'info' },
       ],
     },
     {
@@ -153,6 +154,7 @@ function UserMenu() {
     { to: '/studio', icon: 'layers', label: ['artist', 'admin'].includes(user.role) ? 'SHERE MUSIC STUDIO' : 'Become an artist' },
     { to: user.plus?.active ? '/settings/billing' : '/plus', icon: 'sparkles', label: user.plus?.active ? 'Billing & Membership' : 'Get SHERE MUSIC Plus' },
     { to: '/settings', icon: 'settings', label: 'Settings' },
+    { to: '/help', icon: 'info', label: 'Help' },
     ...(isAdmin ? [{ to: '/admin', icon: 'shield', label: 'Admin dashboard' }] : []),
   ];
 

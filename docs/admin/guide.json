@@ -1,0 +1,21 @@
+{
+  "title": "SHERE MUSIC Admin Guide",
+  "version": "2.1",
+  "updated": "September 2026",
+  "popular": [
+    "getting-started/admin-dashboard-overview",
+    "procedures/reviewing-artist-submissions",
+    "payments/payment-verification",
+    "procedures/handling-payment-issues",
+    "operations/environment-variables",
+    "security/incident-response"
+  ],
+  "quickActions": [
+    { "label": "Music Management", "to": "/admin/songs", "icon": "music" },
+    { "label": "Artist Submissions", "to": "/admin/submissions", "icon": "send" },
+    { "label": "Plus Members", "to": "/admin/plus-members", "icon": "sparkles" },
+    { "label": "Payments", "to": "/admin/payments", "icon": "receipt" },
+    { "label": "Music Videos", "to": "/admin/videos", "icon": "film" },
+    { "label": "Platform Settings", "to": "/admin/settings", "icon": "settings" }
+  ]
+}
