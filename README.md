@@ -290,7 +290,7 @@ For option B, add this rewrite **above** the existing one in `frontend/vercel.js
 { "source": "/api/:path*", "destination": "https://shere-music-api.onrender.com/api/:path*" },
 ```
 
-The Paystack webhook should always point straight at Render.
+The Paystack webhook should always point straight at Render. With option B, also set `TRUST_PROXY=2` on Render: requests then pass through Vercel's proxy and Render's, and the API needs to count both to see each visitor's real address for rate limiting.
 
 ### 1. Supabase (database + storage)
 
