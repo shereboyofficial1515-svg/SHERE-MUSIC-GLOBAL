@@ -29,9 +29,9 @@ function PageTransition({ children }) {
 }
 
 export default function MainLayout() {
-  const { current } = usePlayer();
+  const { current, miniHidden } = usePlayer();
   return (
-    <div className={current ? 'shell has-player' : 'shell'}>
+    <div className={current && !miniHidden ? 'shell has-player' : 'shell'}>
       <a href="#main" className="skip-link">
         Skip to content
       </a>

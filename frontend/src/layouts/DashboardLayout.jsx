@@ -19,7 +19,7 @@ import { cx } from '../utils/format.js';
  */
 export default function DashboardLayout({ nav, badge, badgeTone = 'gold', homeTo, variant }) {
   const { user } = useAuth();
-  const { current } = usePlayer();
+  const { current, miniHidden } = usePlayer();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const mainRef = useRef(null);
@@ -34,7 +34,7 @@ export default function DashboardLayout({ nav, badge, badgeTone = 'gold', homeTo
   }, [pathname]);
 
   return (
-    <div className={cx('admin', variant && `admin--${variant}`, current && 'has-player')}>
+    <div className={cx('admin', variant && `admin--${variant}`, current && !miniHidden && 'has-player')}>
       <a href="#admin-main" className="skip-link">
         Skip to content
       </a>

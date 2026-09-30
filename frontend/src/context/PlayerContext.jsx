@@ -69,6 +69,9 @@ export function PlayerProvider({ children }) {
   const [repeat, setRepeat] = useState(() => readStored('sm:repeat', 'off')); // off | all | one
   const [view, setView] = useState('mini'); // mini | expanded | lyrics
   const [panel, setPanel] = useState('lyrics'); // expanded-view side panel: lyrics | queue | info
+  // UI only: the mini bar was swiped away. Never touches the audio element, the
+  // queue or the current song — playback carries on while it's hidden.
+  const [miniHidden, setMiniHidden] = useState(false);
   const [progress, setProgress] = useState({ currentTime: 0, duration: 0, buffered: 0 });
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -500,6 +503,12 @@ export function PlayerProvider({ children }) {
     });
   }, [current, next, previous, seek]);
 
+  // A different song starting brings the mini bar back.
+  const currentId = current?.id;
+  useEffect(() => {
+    setMiniHidden(false);
+  }, [currentId]);
+
   const value = useMemo(
     () => ({
       current,
@@ -514,6 +523,7 @@ export function PlayerProvider({ children }) {
       repeat,
       view,
       panel,
+      miniHidden,
       hasNext: index < queue.length - 1 || repeat === 'all',
       hasPrevious: index > 0,
       playSong,
@@ -534,12 +544,13 @@ export function PlayerProvider({ children }) {
       clearQueue,
       setView,
       setPanel,
+      setMiniHidden,
       // v1 compatibility
       expanded: view !== 'mini',
       setExpanded: (open) => setView(open ? 'expanded' : 'mini'),
       isCurrent: (id) => current?.id === id,
     }),
-    [current, queue, index, isPlaying, isLoading, error, volume, muted, shuffle, repeat, view, panel, playSong, playList, toggle, pause, next, previous, seek, getCurrentTime, setVolume, toggleMute, toggleShuffle, cycleRepeat, addToQueue, moveInQueue, removeFromQueue, clearQueue]
+    [current, queue, index, isPlaying, isLoading, error, volume, muted, shuffle, repeat, view, panel, miniHidden, playSong, playList, toggle, pause, next, previous, seek, getCurrentTime, setVolume, toggleMute, toggleShuffle, cycleRepeat, addToQueue, moveInQueue, removeFromQueue, clearQueue]
   );
 
   return (
